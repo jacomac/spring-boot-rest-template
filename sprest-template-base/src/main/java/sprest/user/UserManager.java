@@ -1,0 +1,322 @@
+package sprest.user;
+
+import sprest.data.QueryManager;
+import sprest.exception.DuplicateUserException;
+import sprest.exception.InavlidOrExpiredPasswordResetTokenException;
+import sprest.exception.NotFoundByUniqueKeyException;
+import sprest.user.dtos.PasswordResetRequest;
+import sprest.user.dtos.UserDto;
+import sprest.user.dtos.UserSelfAdminDto;
+import sprest.user.repositories.UserAuthorityRepository;
+import sprest.user.repositories.UserRepository;
+import sprest.user.services.RandomStringManager;
+import sprest.utils.DateUtils;
+import sprest.utils.EmailSender;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
+
+import javax.annotation.PostConstruct;
+import javax.transaction.Transactional;
+import java.security.Principal;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.StreamSupport;
+
+import static sprest.user.UserRight.values.MANAGE_ALL;
+import static sprest.user.UserRight.values.MANAGE_ANNOUNCEMENTS;
+
+@Slf4j
+@Component
+@Transactional
+public class UserManager {
+
+    private final int defaultPasswordLength;
+    private final UserRepository userRepository;
+    private final UserAuthorityRepository userAuthorityRepository;
+    private final RandomStringManager randomStringManager;
+    private final QueryManager<User> queryManager;
+    private final EmailSender emailSender;
+
+    public UserManager(UserRepository userRepository,
+                       RandomStringManager randomStringManager,
+                       QueryManager<User> queryManager, EmailSender emailSender,
+                       @Value("${user.passwordLength:12}") int passwordLength,
+                       UserAuthorityRepository userAuthorityRepository
+    ) {
+        this.userRepository = userRepository;
+        this.randomStringManager = randomStringManager;
+        this.queryManager = queryManager;
+        this.emailSender = emailSender;
+        this.defaultPasswordLength = passwordLength;
+        this.userAuthorityRepository = userAuthorityRepository;
+    }
+
+    // make sure user authorities in DB are the same as in the right enums
+    @PostConstruct
+    private void checkUserAuthorities() {
+        List<String> mismatchingRights = new ArrayList<>();
+        var authorities = userAuthorityRepository.findAll();
+        List<String> authoritiesAsList = StreamSupport
+            .stream(authorities.spliterator(), false)
+            .map(UserAuthority::getAuthority).toList();
+        var rightEnumValues = AllUserRights.getInstance().getValues();
+
+        // coming from DB
+        for (UserAuthority auth : authorities) {
+            if (!rightEnumValues.contains(auth.getAuthority())) {
+                mismatchingRights.add(auth.getAuthority());
+            }
+        }
+        // coming from enum
+        for (String right : rightEnumValues) {
+            if (!authoritiesAsList.contains(right)) {
+                mismatchingRights.add(right);
+            }
+        }
+
+        log.warn("Mismatching rights found: {}", mismatchingRights);
+    }
+
+
+    // search by multiple criteria
+    public Page<User> getFilteredUsers(UserSearchFilter filter, Pageable page) {
+        return queryManager.findByMultiSearch(filter, page, User.class);
+    }
+
+    public Page<User> getUsers(Pageable pageable) {
+        return userRepository.findAll(pageable);
+    }
+
+    public User getById(int id) {
+        return userRepository.findById(id).orElseThrow(
+            () -> new NotFoundByUniqueKeyException(String.format("Anwender mit ID %d konnte nicht" +
+                " gefunden werden.", id)));
+    }
+
+    public User getByUserName(String userName) {
+        return userRepository.findByUserName(userName).orElseThrow(
+            () -> new NotFoundByUniqueKeyException(String.format(
+                "Anwender mit login %s konnte nicht gefunden werden.",
+                userName)));
+    }
+
+    public User toggleUserIsActive(int id, boolean active) {
+        var user = getById(id);
+        user.setActive(active);
+
+        return userRepository.save(user);
+    }
+
+    public synchronized User createUser(UserDto dto, User principal) {
+        checkUniqueConstraints(dto);
+        checkRightsAssignment(dto, principal);
+
+        var user = new User();
+        user.copyDto(dto);
+        String generatedPassword =
+            randomStringManager.generateRandomAlphanumericString(defaultPasswordLength);
+        user.setPassword("{bcrypt}" + new BCryptPasswordEncoder().encode(generatedPassword));
+        var userAuthorities = user.getRights().toArray(UserAuthority[]::new);
+
+        return userRepository.save(user);
+    }
+
+    private void checkUniqueConstraints(UserDto dto) {
+        if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
+            throw new DuplicateUserException(String.format("Die Email %s wird bereits verwendet",
+                dto.getEmail()));
+        }
+        assert dto.getUserName() != null;
+        if (userRepository.existsByUserNameIgnoreCase(dto.getUserName())) {
+            throw new DuplicateUserException(String.format("Der Anmeldename %s wird bereits " +
+                "verwendet", dto.getUserName()));
+        }
+    }
+
+    public User getUserByPrincipal(Principal auth) {
+        var principal = ((UsernamePasswordAuthenticationToken) auth).getPrincipal();
+        User user = ((UserPrincipal) principal).getUser();
+        assert user != null;
+        return user;
+    }
+
+    /**
+     * Method dedicated for admin users to reset individual user password.
+     *
+     * @param userId user identifier
+     */
+    public void sendResetPasswordLink(int userId) {
+        try {
+            User user = getById(userId);
+            doSendResetPasswordLink(user);
+        } catch (NotFoundByUniqueKeyException e) {
+            log.warn("Can't reset password for user with id '{}', because it doesn't exist.",
+                userId);
+            throw e;
+        }
+    }
+
+    public void sendResetPasswordLink(PasswordResetRequest request) {
+        User user = userRepository.findByEmailIgnoreCase(request.getEmail()).orElse(null);
+
+        if (user == null) {
+            log.warn("Can't reset password for user with email '{}', because it doesn't exist.",
+                request.getEmail());
+            return;
+        }
+        doSendResetPasswordLink(user);
+    }
+
+    private void doSendResetPasswordLink(User user) {
+        var token = UUID.randomUUID().toString();
+        user.setPasswordResetToken(token);
+        user.setPasswordResetTokenValidUntil(DateUtils.convert(LocalDate.now().plusDays(1)));
+        userRepository.save(user);
+        emailSender.sendPasswordResetEmail(user);
+    }
+
+    public String resetPassword(String token)
+        throws InavlidOrExpiredPasswordResetTokenException {
+        log.info("Resetting password using token {}.", token);
+        var user = userRepository.findByPasswordResetToken(token).orElse(null);
+
+        if (user == null || user.getPasswordResetTokenValidUntil().before(new Date())) {
+            throw new InavlidOrExpiredPasswordResetTokenException("Provided token is invalid!");
+        }
+
+        return doResetPassword(user);
+    }
+
+    public String resetPassword(int userId) {
+        var user = getById(userId);
+
+        return doResetPassword(user);
+    }
+
+    private String doResetPassword(User user) {
+        String generatedPassword =
+            randomStringManager.generateRandomAlphanumericString(defaultPasswordLength);
+        user.setPassword("{bcrypt}" + new BCryptPasswordEncoder().encode(generatedPassword));
+        user.setPasswordResetToken(null);
+        user.setPasswordResetTokenValidUntil(null);
+        userRepository.save(user);
+
+        return generatedPassword;
+    }
+
+    public UserDao updateUser(int id, UserDto dto, User principal) {
+        User user = userRepository.findById(id).orElseThrow();
+        checkIfEmailNotDuplicated(user.getEmail(), dto.getEmail());
+        checkIfUserNameNotChanged(user.getUserName(), dto.getUserName());
+
+        if (Arrays.deepEquals(dto.getRights().toArray(), user.getRights().toArray())) {
+            checkRightsAssignment(dto, principal);
+        }
+
+        user.copyDto(dto);
+
+        return userRepository.save(user).toDao();
+    }
+
+    private void checkIfEmailNotDuplicated(String email, String dtoEmail) {
+        if (email != null && !email.equalsIgnoreCase(dtoEmail)) {
+            if (userRepository.existsByEmailIgnoreCase(dtoEmail)) {
+                throw new DuplicateUserException(String.format("Die Email %s wird bereits " +
+                    "verwendet", dtoEmail));
+            }
+        }
+    }
+
+    private void checkIfUserNameNotChanged(String userName, String dtoUserName) {
+        if (!userName.equalsIgnoreCase(dtoUserName)) {
+            throw new DuplicateUserException("Ein einmal vergebender Anmeldename darf nicht " +
+                "geändert werden");
+        }
+    }
+
+    public UserDao changeSelfUserData(UserSelfAdminDto user, User principal) {
+        var existingUser = getById(principal.getId());
+        existingUser.copySelfAdminDto(user);
+
+        return userRepository.save(existingUser).toDao();
+    }
+
+    private void checkRightsAssignment(UserDto dto, User user) {
+        Iterable<UserAuthority> grantable = getGrantableRights(user);
+
+        for (UserAuthority authority : dto.getRights()) {
+            if (authority.getId() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Authority must contains an id");
+            }
+            var right = authority.getAuthority();
+            if (right.startsWith("MANAGE_") || right.startsWith("SETUP_")) {
+                boolean isAllowed = false;
+                for (UserAuthority g : grantable) {
+                    if (g.getAuthority().equalsIgnoreCase(right)) {
+                        isAllowed = true;
+                        break;
+                    }
+                }
+                if (!isAllowed) {
+                    throw new AccessDeniedException(String
+                        .format(
+                            "Sie dürfen das Recht %s nicht vergeben, da Sie es selbst nicht " +
+                                "besitzen",
+                            right));
+                }
+            }
+        }
+    }
+
+    public Iterable<UserAuthority> getGrantableRights(User user) {
+        var authorities = (List<UserAuthority>) userAuthorityRepository.findAll(); //enforce to
+        // only accept ENUM values
+
+        if (user.hasRight(MANAGE_ANNOUNCEMENTS)) {
+            return authorities;
+        }
+        return authorities.stream()
+            .filter(
+                authority -> {
+                    var authName = authority.getAuthority();
+                    return canGrantAuthority(user, authName);
+                }
+            )
+            .sorted(Comparator.comparing(UserAuthority::getAuthority))
+            .toList();
+    }
+
+    private boolean canGrantAuthority(User user, String authName) {
+        String managePrefix = "MANAGE_";
+        String setupPrefix = "SETUP_";
+
+        boolean isManageRight = authName.startsWith(managePrefix);
+        boolean canGrantManageRight = (user.hasRight(authName) || user.hasRight(MANAGE_ALL));
+        boolean isNotManageOrSetupRight =
+            !(authName.startsWith(managePrefix) || authName.startsWith(setupPrefix));
+
+        return (isManageRight && canGrantManageRight) || isNotManageOrSetupRight;
+    }
+
+    public Iterable<String> getAvailableRights() {
+        return AllUserRights.getInstance().getValues();
+    }
+
+    public Boolean existsByClientIdAndUserName(Integer clientId, String username) {
+        return userRepository.existsByUserNameIgnoreCase(username.toLowerCase());
+    }
+
+    public Boolean existsByEmail(String email) {
+        return userRepository.existsByEmailIgnoreCase(email);
+    }
+
+}
