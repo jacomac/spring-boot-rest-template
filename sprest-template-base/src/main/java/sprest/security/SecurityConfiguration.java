@@ -35,13 +35,13 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         CookieCsrfTokenRepository cookieCsrfTokenRepository =
             CookieCsrfTokenRepository.withHttpOnlyFalse();
-        cookieCsrfTokenRepository.setCookiePath("/"); 
+        cookieCsrfTokenRepository.setCookiePath("/");
 
         var securityConfiguration = SecurityManager.configureCommon(http)
             .and()
             .csrf()
             .csrfTokenRepository(cookieCsrfTokenRepository)
-            .ignoringAntMatchers("/ext/**");
+            .ignoringRequestMatchers("/ext/**");
 
         return securityConfiguration.and().build();
     }

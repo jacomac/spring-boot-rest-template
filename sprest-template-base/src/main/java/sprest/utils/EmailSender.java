@@ -1,5 +1,6 @@
 package sprest.utils;
 
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import sprest.exception.EmailException;
 import sprest.user.AppUser;
 import lombok.extern.slf4j.Slf4j;
@@ -22,9 +23,9 @@ public class EmailSender {
     private final EmailSettings emailSettings;
     private final EmailContentProvider emailContentProvider;
 
-    public EmailSender(JavaMailSender mailSender, EmailSettings emailSettings,
+    public EmailSender(EmailSettings emailSettings,
         EmailContentProvider emailContentProvider) {
-        Objects.requireNonNull(mailSender);
+        JavaMailSender mailSender = new JavaMailSenderImpl();
         Objects.requireNonNull(emailSettings);
         Objects.requireNonNull(emailContentProvider);
         this.emailSettings = emailSettings;
