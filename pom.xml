@@ -217,5 +217,27 @@
             </resource>
         </resources>
     </build>
+    
+    <repositories>
+        <repository>
+            <snapshots />
+            <id>snapshots</id>
+            <name>jacomac</name>
+            <url>https://maven.pkg.github.com/jacomac/spring-boot-rest-template</url>
+        </repository>
+    </repositories>
+
+	<distributionManagement>
+		<repository>
+            <id>release</id>
+            <name>jacomac</name>
+            <url>https://maven.pkg.github.com/jacomac/spring-boot-rest-template</url>
+		</repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>jacomac</name>
+            <url>https://maven.pkg.github.com/jacomac/spring-boot-rest-template</url>
+        </snapshotRepository>
+	</distributionManagement>
 
 </project>

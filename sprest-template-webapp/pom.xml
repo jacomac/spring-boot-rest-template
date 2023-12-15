@@ -37,9 +37,9 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>pl.project13.maven</groupId>
-                <artifactId>git-commit-id-plugin</artifactId>
-                <version>4.9.10</version>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+                <version>7.0.0</version>
                 <configuration>
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     <!-- this is false by default, forces the plugin to generate the git.properties file -->
@@ -50,6 +50,7 @@
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
+                <version>3.4.0</version>
                 <configuration>
                     <from>
                         <image>openjdk:17-alpine</image>
