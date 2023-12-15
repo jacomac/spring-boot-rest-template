@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.HttpStatusCodeException;
 
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
 
 @Slf4j
 @ControllerAdvice

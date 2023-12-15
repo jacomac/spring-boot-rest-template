@@ -15,7 +15,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static sprest.user.UserRight.values.MANAGE_ALL;
 import static sprest.user.UserRight.values.MANAGE_ANNOUNCEMENTS;
 
 class UserControllerTest extends ControllerTestBase {
@@ -69,8 +68,8 @@ class UserControllerTest extends ControllerTestBase {
             .andExpect(jsonPath("$.rights[0].authority", Matchers.is(MANAGE_ANNOUNCEMENTS)));
     }
 
-    private User getTestUser(List<String> authorityNames) {
-        var user = new User();
+    private AppUser getTestUser(List<String> authorityNames) {
+        var user = new AppUser();
         user.setUserName("sirius-black");
         user.setFirstName("Test");
         user.setLastName("User");

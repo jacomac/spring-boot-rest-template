@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import java.security.Principal;
 
 /**
@@ -39,7 +39,7 @@ public class UserController {
     }
 
     @GetMapping("/current")
-    public User user(Principal auth) {
+    public AppUser user(Principal auth) {
         return userManager.getUserByPrincipal(auth);
     }
 
@@ -47,7 +47,7 @@ public class UserController {
     @PutMapping("/update-current")
     public UserDao changeUser(@Valid @RequestBody UserSelfAdminDto user, Principal auth) {
         try {
-            User principal = userManager.getUserByPrincipal(auth);
+            AppUser principal = userManager.getUserByPrincipal(auth);
             return userManager.changeSelfUserData(user, principal);
         } catch (DuplicateUserException | AccessDeniedException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);

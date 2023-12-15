@@ -23,14 +23,14 @@ public class UserDetailsService implements org.springframework.security.core.use
 		return new UserPrincipal(user);
 	}
 
-    private User getUserByUserName(String username) {
+    private AppUser getUserByUserName(String username) {
         log.debug("authenticate: user {}", username);
 
         return userRepository.findByUserName(username)
             .orElseThrow(() -> new UsernameNotFoundException(username));
     }
 
-    private User getUserByEmail(String username) {
+    private AppUser getUserByEmail(String username) {
         log.debug("authenticate: email {}", username);
 
         return userRepository.findByEmailIgnoreCase(username)

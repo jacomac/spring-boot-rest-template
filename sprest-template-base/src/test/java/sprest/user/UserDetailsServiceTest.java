@@ -26,7 +26,7 @@ public class UserDetailsServiceTest {
         // given
         var clientShortcut = "cli";
         var userName = "user";
-        var user = new User();
+        var user = new AppUser();
         user.setUserName(userName);
 
         // when
@@ -43,7 +43,7 @@ public class UserDetailsServiceTest {
     public void mustLoadUserByEmail() {
         // given
         var email = "user@email.xyz";
-        var user = new User();
+        var user = new AppUser();
         user.setUserName(email);
 
         // when

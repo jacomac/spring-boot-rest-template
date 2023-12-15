@@ -39,3 +39,4 @@ local
 *.log
 .env
 /.mvn/wrapper
+/deployment/db-data

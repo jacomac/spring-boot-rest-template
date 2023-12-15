@@ -6,7 +6,7 @@ import sprest.api.RequiredAuthority;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import static sprest.user.UserRight.values.MANAGE_ANNOUNCEMENTS;
 

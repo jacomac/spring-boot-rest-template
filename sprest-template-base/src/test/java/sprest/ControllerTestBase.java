@@ -1,7 +1,7 @@
 package sprest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import sprest.user.User;
+import sprest.user.AppUser;
 import sprest.user.UserAuthority;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,7 +40,7 @@ public class ControllerTestBase {
     }
 
     @SafeVarargs
-    protected final <T> User getMockUser(T... rights) {
+    protected final <T> AppUser getMockUser(T... rights) {
         AtomicInteger index = new AtomicInteger(1);
         Set<UserAuthority> authorities = Arrays.stream(rights).map(x -> {
             var authority = new UserAuthority();
@@ -49,7 +49,7 @@ public class ControllerTestBase {
             return authority;
         }).collect(Collectors.toSet());
 
-        var user = new User();
+        var user = new AppUser();
         user.setId(9999);
         user.setUserName("sirius-black");
         user.setFirstName("Test");

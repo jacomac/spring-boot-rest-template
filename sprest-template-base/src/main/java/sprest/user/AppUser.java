@@ -11,10 +11,9 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -29,7 +28,7 @@ import java.util.Set;
     @Index(name = "IDX_lastName", columnList = "lastName")
 })
 @NoArgsConstructor
-public class User {
+public class AppUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
@@ -89,7 +88,7 @@ public class User {
     @Temporal(TemporalType.TIMESTAMP)
     private Date passwordResetTokenValidUntil;
 
-    public User(UserDto dto) {
+    public AppUser(UserDto dto) {
         copyDto(dto);
     }
 

@@ -1,7 +1,7 @@
 package sprest.utils;
 
 import sprest.exception.EmailException;
-import sprest.user.User;
+import sprest.user.AppUser;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 import java.io.IOException;
@@ -31,7 +31,7 @@ public class EmailContentProvider {
         this.baseUrl = baseUrl;
     }
 
-    public String forResetPassword(User user) {
+    public String forResetPassword(AppUser user) {
         StringWriter emailContent = new StringWriter();
         var params = new HashMap<String, String>(4);
         params.put("baseUrl", baseUrl.toString());

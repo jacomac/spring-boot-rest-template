@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -56,22 +56,22 @@ public class UserAdminController {
     public Page<UserAdminDto> getUsersInPages(Principal auth, Optional<UserSearchFilter> filter, Pageable pageable) {
         if (auth == null)
             return null;
-        User principal = userManager.getUserByPrincipal(auth);
+        AppUser principal = userManager.getUserByPrincipal(auth);
         assert principal != null;
         return (filter.isPresent() && filter.get().isUseFilter())
             ? userPageToAdminDto(userManager.getFilteredUsers(filter.get(), pageable))
             : userPageToAdminDto(userManager.getUsers(pageable));
     }
 
-	private Page<UserAdminDto> userPageToAdminDto(Page<User> users) {
-		return users.map(User::toAdminDto);
+	private Page<UserAdminDto> userPageToAdminDto(Page<AppUser> users) {
+		return users.map(AppUser::toAdminDto);
 	}
 
 	@Operation(summary = "create a new user in the system",
 			description = "creates a new user for the client of the calling user. If the user has the MANAGE_ANNOUNCEMENTS privilege and an id of an existing client is provided, the user will be created for the desired client instead.")
 	@PostMapping
 	@RequiredAuthority(MANAGE_USERS)
-	public User saveNewUser(@Valid @RequestBody UserDto user, Principal auth) {
+	public AppUser saveNewUser(@Valid @RequestBody UserDto user, Principal auth) {
 		try {
 			return userManager.createUser(user, userManager.getUserByPrincipal(auth));
 		} catch (DuplicateUserException e) {
@@ -104,7 +104,7 @@ public class UserAdminController {
 	@ResponseBody
 	@RequiredAuthority(MANAGE_USERS)
 	public Iterable<UserAuthority> getGrantableRights(Principal auth) {
-		User principal = userManager.getUserByPrincipal(auth);
+		AppUser principal = userManager.getUserByPrincipal(auth);
 		return userManager.getGrantableRights(principal);
 	}
 

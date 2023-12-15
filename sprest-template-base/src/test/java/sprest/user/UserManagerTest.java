@@ -40,7 +40,7 @@ class UserManagerTest {
     UserAuthorityRepository userAuthorityRepository;
     RandomStringManager randomStringManager = new RandomStringManager();
     @Mock
-    QueryManager<User> queryManager;
+    QueryManager<AppUser> queryManager;
     @Mock
     EmailSender emailSender;
 
@@ -77,7 +77,7 @@ class UserManagerTest {
     @Test
     public void mustSendEmailWithPasswordResetLink() {
         // given
-        var u = new User();
+        var u = new AppUser();
         u.setEmail(TEST_EMAIL);
         when(userRepository.findByEmailIgnoreCase(TEST_EMAIL)).thenReturn(Optional.of(u));
         var r = new PasswordResetRequest();
@@ -93,7 +93,7 @@ class UserManagerTest {
     @Test
     public void mustThrowAnExceptionWhenTokenIsInvalidOrExpired() {
         // given
-        var userWithExpiredToken = new User();
+        var userWithExpiredToken = new AppUser();
         userWithExpiredToken.setPasswordResetToken("abc");
         userWithExpiredToken.setPasswordResetTokenValidUntil(DateUtils.convert(LocalDate.now().minusDays(1)));
         when(userRepository.findByPasswordResetToken("abc")).thenReturn(Optional.empty(), Optional.of(userWithExpiredToken));
@@ -115,7 +115,7 @@ class UserManagerTest {
     @Test
     public void mustSetNewUserPassword() {
         // given
-        var user = new User();
+        var user = new AppUser();
         user.setPasswordResetToken("abc");
         user.setPasswordResetTokenValidUntil(DateUtils.convert(LocalDate.now().plusDays(1)));
         when(userRepository.findByPasswordResetToken("abc")).thenReturn(Optional.of(user));
@@ -136,7 +136,7 @@ class UserManagerTest {
     @Test
     public void mustReturnGrantableUserRightsForSuperAdmin() {
         // given
-        var user = new User();
+        var user = new AppUser();
         var setupClientsRight = new UserAuthority();
         setupClientsRight.setAuthority(MANAGE_ANNOUNCEMENTS);
         user.setRights(Set.of(setupClientsRight));
@@ -157,7 +157,7 @@ class UserManagerTest {
     @Test
     public void mustReturnGrantableUserRightsForAdminWithManageAll() {
         // given
-        var user = new User();
+        var user = new AppUser();
         var manageAllRight = new UserAuthority();
         manageAllRight.setAuthority(MANAGE_ALL);
         user.setRights(Set.of(manageAllRight));
@@ -180,7 +180,7 @@ class UserManagerTest {
     @Test
     public void mustReturnGrantableUserRightsForAdminWithPartialManageRights() {
         // given
-        var user = new User();
+        var user = new AppUser();
         var manageUsersRight = new UserAuthority();
         manageUsersRight.setAuthority(MANAGE_USERS);
         user.setRights(Set.of(manageUsersRight));
@@ -201,10 +201,10 @@ class UserManagerTest {
         // given
         int activeUserId = 99;
         int inactiveUserId = 100;
-        var activeUser = new User();
+        var activeUser = new AppUser();
         activeUser.setActive(true);
         activeUser.setId(activeUserId);
-        var inactiveUser = new User();
+        var inactiveUser = new AppUser();
         inactiveUser.setActive(false);
         inactiveUser.setId(inactiveUserId);
 
@@ -224,7 +224,7 @@ class UserManagerTest {
     @Test
     public void mustCreateUser() {
         // given
-        var admin = new User();
+        var admin = new AppUser();
         var adminRight = new UserAuthority();
         adminRight.setAuthority(MANAGE_USERS);
         adminRight.setId(1);
@@ -234,10 +234,10 @@ class UserManagerTest {
         dto.setUserName("user");
         dto.setRights(Set.of(adminRight));
 
-        var user = new User();
+        var user = new AppUser();
         user.setId(1);
 
-        var invalidAdmin = new User();
+        var invalidAdmin = new AppUser();
         invalidAdmin.setRights(Set.of());
 
         var invalidDto = new UserDto();
@@ -246,7 +246,7 @@ class UserManagerTest {
 
         // when
         when(userAuthorityRepository.findAll()).thenReturn(List.of(adminRight));
-        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userRepository.save(any(AppUser.class))).thenReturn(user);
 
         // expect
         assertNotNull(userManager.createUser(dto, admin).getId());
@@ -269,8 +269,8 @@ class UserManagerTest {
         when(userRepository.existsByUserNameIgnoreCase(userName)).thenReturn(true);
 
         // expect
-        assertThrows(DuplicateUserException.class, () -> userManager.createUser(emailDto, new User()));
-        assertThrows(DuplicateUserException.class, () -> userManager.createUser(userNameDto, new User()));
+        assertThrows(DuplicateUserException.class, () -> userManager.createUser(emailDto, new AppUser()));
+        assertThrows(DuplicateUserException.class, () -> userManager.createUser(userNameDto, new AppUser()));
     }
 
     private List<UserAuthority> getMockListOfAuthorities(List<String> authNames) {

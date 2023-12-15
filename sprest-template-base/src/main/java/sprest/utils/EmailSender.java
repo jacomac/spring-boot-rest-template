@@ -1,14 +1,14 @@
 package sprest.utils;
 
 import sprest.exception.EmailException;
-import sprest.user.User;
+import sprest.user.AppUser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -32,7 +32,7 @@ public class EmailSender {
         this.emailContentProvider = emailContentProvider;
     }
 
-    public void sendPasswordResetEmail(User user) throws EmailException {
+    public void sendPasswordResetEmail(AppUser user) throws EmailException {
         log.debug("Sending password reset email to {}.", user.getEmail());
         try {
             String messageContent = emailContentProvider.forResetPassword(user);

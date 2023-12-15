@@ -1,19 +1,20 @@
 package sprest.user.repositories;
 
-import sprest.user.User;
+import org.springframework.data.repository.CrudRepository;
+import sprest.user.AppUser;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 import java.util.Optional;
 
-public interface UserRepository extends PagingAndSortingRepository<User, Integer> {
+public interface UserRepository extends PagingAndSortingRepository<AppUser, Integer>, CrudRepository <AppUser, Integer> {
 
-	@Query("FROM User WHERE userName = ?1")
-	Optional<User> findByUserName(String userName);
+	@Query("FROM AppUser WHERE userName = ?1")
+	Optional<AppUser> findByUserName(String userName);
 
-    Optional<User> findByEmailIgnoreCase(String email);
+    Optional<AppUser> findByEmailIgnoreCase(String email);
 
-    Optional<User> findByPasswordResetToken(String token);
+    Optional<AppUser> findByPasswordResetToken(String token);
 
     boolean existsByEmailIgnoreCase(String email);
 

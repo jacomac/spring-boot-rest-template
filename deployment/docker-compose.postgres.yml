@@ -1,0 +1,22 @@
+version: "3.7"
+
+networks:
+  db:
+    labels:
+      network.description: "Network for databases"
+      
+services:
+
+  postgres:
+    image: postgres:12-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-shopping_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-shopping_pass}
+      POSTGRES_DB: ${DB_NAME:-shopping-list-db}
+    volumes:
+      - ./db-data/:/var/lib/postgresql/data
+    networks:
+      - db
+    ports:
+      - "5432:5432"

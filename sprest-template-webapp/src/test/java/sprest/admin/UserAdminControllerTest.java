@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import sprest.ControllerTestBase;
-import sprest.user.User;
+import sprest.user.AppUser;
 import sprest.user.UserAuthority;
 import sprest.user.UserPrincipal;
 import sprest.user.UserRight;
@@ -18,7 +18,6 @@ import sprest.user.repositories.UserRepository;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -105,7 +104,7 @@ class UserAdminControllerTest extends ControllerTestBase {
                 jsonPath("$..*", Matchers.hasItem(ACCESS_ALL)));
     }
 
-    private void tryToStoreNonPractitionerUser(User user) throws Exception {
+    private void tryToStoreNonPractitionerUser(AppUser user) throws Exception {
         String json = new String(Files.readAllBytes(Paths.get(
             getClass().getClassLoader().getResource("sprest/admin/TestUserCreate.json").toURI())));
 
@@ -165,8 +164,8 @@ class UserAdminControllerTest extends ControllerTestBase {
             .andExpect(status().isOk())
             .andReturn();
 
-        User user = objectMapper.readValue(apiResponse.getResponse().getContentAsString(),
-            User.class);
+        AppUser user = objectMapper.readValue(apiResponse.getResponse().getContentAsString(),
+            AppUser.class);
         assertTrue(user.getId() > 0);
 
         var userAuthority = new UserAuthority();
@@ -298,7 +297,7 @@ class UserAdminControllerTest extends ControllerTestBase {
     public void mustImpersonateUser() throws Exception {
         // given
         var adminUser = getMockUser(MANAGE_USERS);
-        var user = new User();
+        var user = new AppUser();
         user.setEmail("test.email@sprest.de");
         user.setUserName("test_user");
         user.setFirstName("Test");
@@ -363,7 +362,7 @@ class UserAdminControllerTest extends ControllerTestBase {
     public void shouldReturnErrorWhenSuperAdminImpersonationAttempted() throws Exception {
         // given
         var adminUser = getMockUser(MANAGE_ANNOUNCEMENTS);
-        var user = new User();
+        var user = new AppUser();
         user.setEmail("test.email@sprest.de");
         user.setUserName("test_user");
         user.setFirstName("Test");

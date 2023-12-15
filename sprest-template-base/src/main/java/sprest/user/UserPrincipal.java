@@ -9,9 +9,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 public class UserPrincipal implements UserDetails {
 
-    private User user;
+    private AppUser user;
 
-    public UserPrincipal(User user) {
+    public UserPrincipal(AppUser user) {
         this.user = user;
     }
 
@@ -55,7 +55,7 @@ public class UserPrincipal implements UserDetails {
         return user.isActive();
     }
 
-    public User getUser() {
+    public AppUser getUser() {
         return user;
     }
 

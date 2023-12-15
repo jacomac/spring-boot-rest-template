@@ -1,5 +1,17 @@
 package sprest.user;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 import sprest.data.QueryManager;
 import sprest.exception.DuplicateUserException;
 import sprest.exception.InavlidOrExpiredPasswordResetTokenException;
@@ -12,19 +24,7 @@ import sprest.user.repositories.UserRepository;
 import sprest.user.services.RandomStringManager;
 import sprest.utils.DateUtils;
 import sprest.utils.EmailSender;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
-import javax.annotation.PostConstruct;
-import javax.transaction.Transactional;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.*;
@@ -42,12 +42,12 @@ public class UserManager {
     private final UserRepository userRepository;
     private final UserAuthorityRepository userAuthorityRepository;
     private final RandomStringManager randomStringManager;
-    private final QueryManager<User> queryManager;
+    private final QueryManager<AppUser> queryManager;
     private final EmailSender emailSender;
 
     public UserManager(UserRepository userRepository,
                        RandomStringManager randomStringManager,
-                       QueryManager<User> queryManager, EmailSender emailSender,
+                       QueryManager<AppUser> queryManager, EmailSender emailSender,
                        @Value("${user.passwordLength:12}") int passwordLength,
                        UserAuthorityRepository userAuthorityRepository
     ) {
@@ -87,39 +87,39 @@ public class UserManager {
 
 
     // search by multiple criteria
-    public Page<User> getFilteredUsers(UserSearchFilter filter, Pageable page) {
-        return queryManager.findByMultiSearch(filter, page, User.class);
+    public Page<AppUser> getFilteredUsers(UserSearchFilter filter, Pageable page) {
+        return queryManager.findByMultiSearch(filter, page, AppUser.class);
     }
 
-    public Page<User> getUsers(Pageable pageable) {
+    public Page<AppUser> getUsers(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
 
-    public User getById(int id) {
+    public AppUser getById(int id) {
         return userRepository.findById(id).orElseThrow(
             () -> new NotFoundByUniqueKeyException(String.format("Anwender mit ID %d konnte nicht" +
                 " gefunden werden.", id)));
     }
 
-    public User getByUserName(String userName) {
+    public AppUser getByUserName(String userName) {
         return userRepository.findByUserName(userName).orElseThrow(
             () -> new NotFoundByUniqueKeyException(String.format(
                 "Anwender mit login %s konnte nicht gefunden werden.",
                 userName)));
     }
 
-    public User toggleUserIsActive(int id, boolean active) {
+    public AppUser toggleUserIsActive(int id, boolean active) {
         var user = getById(id);
         user.setActive(active);
 
         return userRepository.save(user);
     }
 
-    public synchronized User createUser(UserDto dto, User principal) {
+    public synchronized AppUser createUser(UserDto dto, AppUser principal) {
         checkUniqueConstraints(dto);
         checkRightsAssignment(dto, principal);
 
-        var user = new User();
+        var user = new AppUser();
         user.copyDto(dto);
         String generatedPassword =
             randomStringManager.generateRandomAlphanumericString(defaultPasswordLength);
@@ -141,9 +141,9 @@ public class UserManager {
         }
     }
 
-    public User getUserByPrincipal(Principal auth) {
+    public AppUser getUserByPrincipal(Principal auth) {
         var principal = ((UsernamePasswordAuthenticationToken) auth).getPrincipal();
-        User user = ((UserPrincipal) principal).getUser();
+        AppUser user = ((UserPrincipal) principal).getUser();
         assert user != null;
         return user;
     }
@@ -155,7 +155,7 @@ public class UserManager {
      */
     public void sendResetPasswordLink(int userId) {
         try {
-            User user = getById(userId);
+            AppUser user = getById(userId);
             doSendResetPasswordLink(user);
         } catch (NotFoundByUniqueKeyException e) {
             log.warn("Can't reset password for user with id '{}', because it doesn't exist.",
@@ -165,7 +165,7 @@ public class UserManager {
     }
 
     public void sendResetPasswordLink(PasswordResetRequest request) {
-        User user = userRepository.findByEmailIgnoreCase(request.getEmail()).orElse(null);
+        AppUser user = userRepository.findByEmailIgnoreCase(request.getEmail()).orElse(null);
 
         if (user == null) {
             log.warn("Can't reset password for user with email '{}', because it doesn't exist.",
@@ -175,7 +175,7 @@ public class UserManager {
         doSendResetPasswordLink(user);
     }
 
-    private void doSendResetPasswordLink(User user) {
+    private void doSendResetPasswordLink(AppUser user) {
         var token = UUID.randomUUID().toString();
         user.setPasswordResetToken(token);
         user.setPasswordResetTokenValidUntil(DateUtils.convert(LocalDate.now().plusDays(1)));
@@ -201,7 +201,7 @@ public class UserManager {
         return doResetPassword(user);
     }
 
-    private String doResetPassword(User user) {
+    private String doResetPassword(AppUser user) {
         String generatedPassword =
             randomStringManager.generateRandomAlphanumericString(defaultPasswordLength);
         user.setPassword("{bcrypt}" + new BCryptPasswordEncoder().encode(generatedPassword));
@@ -212,8 +212,8 @@ public class UserManager {
         return generatedPassword;
     }
 
-    public UserDao updateUser(int id, UserDto dto, User principal) {
-        User user = userRepository.findById(id).orElseThrow();
+    public UserDao updateUser(int id, UserDto dto, AppUser principal) {
+        AppUser user = userRepository.findById(id).orElseThrow();
         checkIfEmailNotDuplicated(user.getEmail(), dto.getEmail());
         checkIfUserNameNotChanged(user.getUserName(), dto.getUserName());
 
@@ -242,14 +242,14 @@ public class UserManager {
         }
     }
 
-    public UserDao changeSelfUserData(UserSelfAdminDto user, User principal) {
+    public UserDao changeSelfUserData(UserSelfAdminDto user, AppUser principal) {
         var existingUser = getById(principal.getId());
         existingUser.copySelfAdminDto(user);
 
         return userRepository.save(existingUser).toDao();
     }
 
-    private void checkRightsAssignment(UserDto dto, User user) {
+    private void checkRightsAssignment(UserDto dto, AppUser user) {
         Iterable<UserAuthority> grantable = getGrantableRights(user);
 
         for (UserAuthority authority : dto.getRights()) {
@@ -277,7 +277,7 @@ public class UserManager {
         }
     }
 
-    public Iterable<UserAuthority> getGrantableRights(User user) {
+    public Iterable<UserAuthority> getGrantableRights(AppUser user) {
         var authorities = (List<UserAuthority>) userAuthorityRepository.findAll(); //enforce to
         // only accept ENUM values
 
@@ -295,7 +295,7 @@ public class UserManager {
             .toList();
     }
 
-    private boolean canGrantAuthority(User user, String authName) {
+    private boolean canGrantAuthority(AppUser user, String authName) {
         String managePrefix = "MANAGE_";
         String setupPrefix = "SETUP_";
 
