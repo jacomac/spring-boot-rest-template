@@ -32,9 +32,14 @@ public enum UserRight {
 
 	// REGION-START: Rights for Administrative Users
 	/**
-	 * can CRUD system users
+	 * can CRUD users of the app
 	 */
 	MANAGE_USERS,
+
+    /**
+     * can adjust logging at runtime, check system health etc.
+     */
+    MANAGE_SYSTEM_SETTINGS,
 
 	/**
 	 * Can define time-boxed announcements to usually be shown to the user at the login screen
@@ -47,6 +52,7 @@ public enum UserRight {
 		public static final String ACCESS_ALL = "ACCESS_ALL";
         public static final String INVOKE_ALL = "INVOKE_ALL";
 		public static final String MANAGE_ANNOUNCEMENTS = "MANAGE_ANNOUNCEMENTS";
+        public static final String MANAGE_SYSTEM_SETTINGS = "MANAGE_SYSTEM_SETTINGS";
 		public static final String MANAGE_USERS = "MANAGE_USERS";
 	}
 }
