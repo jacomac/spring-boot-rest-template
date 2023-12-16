@@ -3,7 +3,9 @@ package sprest.user;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ import sprest.utils.EmailSender;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static sprest.user.UserRight.values.MANAGE_ALL;
@@ -39,7 +42,9 @@ import static sprest.user.UserRight.values.MANAGE_ANNOUNCEMENTS;
 @Transactional
 public class UserManager {
 
-    private final int defaultPasswordLength;
+    private static final Set<String> DEFAULT_ADMIN_ACCESS_RIGHTS = Set.of("ACCESS_ALL", "MANAGE_ALL");
+    private final String defaultAdminPassword;
+    private final Environment environment;
     private final UserRepository userRepository;
     private final AccessRightRepository accessRightRepository;
     private final RandomStringManager randomStringManager;
@@ -49,43 +54,82 @@ public class UserManager {
     public UserManager(UserRepository userRepository,
                        RandomStringManager randomStringManager,
                        QueryManager<AppUser> queryManager, EmailSender emailSender,
-                       @Value("${user.passwordLength:12}") int passwordLength,
-                       AccessRightRepository accessRightRepository
-    ) {
+                       AccessRightRepository accessRightRepository, @Value("${sprest.admin.password}") String defaultAdminPassword,
+                       Environment environment) {
         this.userRepository = userRepository;
         this.randomStringManager = randomStringManager;
         this.queryManager = queryManager;
         this.emailSender = emailSender;
-        this.defaultPasswordLength = passwordLength;
         this.accessRightRepository = accessRightRepository;
+        this.defaultAdminPassword = defaultAdminPassword;
+        this.environment = environment;
     }
 
-    // make sure user authorities in DB are the same as in the right enums
+    /**
+     * On a fresh DB create the access rights and default admin user in the DB, otherwise:
+     * make sure the access rights in DB are the same as in the right enums
+     */
     @PostConstruct
     private void checkUserAuthorities() {
-        List<String> mismatchingRights = new ArrayList<>();
-        var authorities = accessRightRepository.findAll();
-        List<String> authoritiesAsList = StreamSupport
-            .stream(authorities.spliterator(), false)
-            .map(AccessRight::getName).toList();
-        var rightEnumValues = AllUserRights.getInstance().getValues();
+        var allRights = AllUserRights.getInstance().getValues();
+        if (accessRightRepository.count() == 0) {
+            createDefaultAdminUser(allRights);
+        } else {
+            List<String> mismatchingRights = new ArrayList<>();
+            var authorities = accessRightRepository.findAll();
+            List<String> authoritiesAsList = StreamSupport
+                .stream(authorities.spliterator(), false)
+                .map(AccessRight::getName).toList();
 
-        // coming from DB
-        for (AccessRight auth : authorities) {
-            if (!rightEnumValues.contains(auth.getName())) {
-                mismatchingRights.add(auth.getName());
+            // coming from DB
+            for (AccessRight auth : authorities) {
+                if (!allRights.contains(auth.getName())) {
+                    mismatchingRights.add(auth.getName());
+                }
             }
-        }
-        // coming from enum
-        for (String right : rightEnumValues) {
-            if (!authoritiesAsList.contains(right)) {
-                mismatchingRights.add(right);
+            // coming from enum
+            for (String right : allRights) {
+                if (!authoritiesAsList.contains(right)) {
+                    mismatchingRights.add(right);
+                }
             }
-        }
 
-        log.warn("Mismatching rights found: {}", mismatchingRights);
+            log.warn("Mismatching rights found: {}", mismatchingRights);
+        }
     }
 
+    private void createDefaultAdminUser(List<String> allRights) {
+        if (Arrays.asList(environment.getActiveProfiles()).contains("production")
+            && StringUtils.isBlank(defaultAdminPassword)) {
+            throw new IllegalArgumentException("Missing default admin user password!");
+        }
+
+        var allAccessRights = allRights.stream().map(right -> {
+            var a = new AccessRight(right);
+            return a;
+        }).collect(Collectors.toList());
+
+        var rightsAdmin = new HashSet<AccessRight>();
+        accessRightRepository.saveAll(allAccessRights).forEach(authority -> {
+            if (DEFAULT_ADMIN_ACCESS_RIGHTS.contains(authority.getName())) {
+                rightsAdmin.add(authority);
+            }
+        });
+
+        var user = new AppUser();
+        user.setActive(true);
+        user.setActive(true);
+        user.setUserName("admin");
+        user.setFirstName("Admin");
+        user.setLastName("Admin");
+        user.setEmail("johnnie.budihardjo@trashmail.de");
+        user.setAccessRights(rightsAdmin);
+        var password = StringUtils.isBlank(defaultAdminPassword) ? "9AB56XYuw6AzP" : defaultAdminPassword;
+        var bCryptPasswordEncoder = new BCryptPasswordEncoder();
+        user.setPassword("{bcrypt}" + bCryptPasswordEncoder.encode(password));
+        userRepository.save(user);
+        log.info("Created default admin user");
+    }
 
     // search by multiple criteria
     public Page<AppUser> getFilteredUsers(UserSearchFilter filter, Pageable page) {
@@ -98,8 +142,7 @@ public class UserManager {
 
     public AppUser getById(int id) {
         return userRepository.findById(id).orElseThrow(
-            () -> new NotFoundByUniqueKeyException(String.format("Anwender mit ID %d konnte nicht" +
-                " gefunden werden.", id)));
+            () -> new NotFoundByUniqueKeyException(String.format("User with ID %d could not be found", id)));
     }
 
     public AppUser getByUserName(String userName) {
@@ -123,7 +166,7 @@ public class UserManager {
         var user = new AppUser();
         user.copyDto(dto);
         String generatedPassword =
-            randomStringManager.generateRandomAlphanumericString(defaultPasswordLength);
+            randomStringManager.generateRandomAlphanumericString(12);
         user.setPassword("{bcrypt}" + new BCryptPasswordEncoder().encode(generatedPassword));
         var userAuthorities = user.getAccessRights().toArray(AccessRight[]::new);
 
@@ -204,7 +247,7 @@ public class UserManager {
 
     private String doResetPassword(AppUser user) {
         String generatedPassword =
-            randomStringManager.generateRandomAlphanumericString(defaultPasswordLength);
+            randomStringManager.generateRandomAlphanumericString(12);
         user.setPassword("{bcrypt}" + new BCryptPasswordEncoder().encode(generatedPassword));
         user.setPasswordResetToken(null);
         user.setPasswordResetTokenValidUntil(null);

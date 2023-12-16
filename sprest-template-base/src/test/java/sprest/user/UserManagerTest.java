@@ -1,5 +1,8 @@
 package sprest.user;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import sprest.data.QueryManager;
 import sprest.exception.DuplicateUserException;
 import sprest.exception.InavlidOrExpiredPasswordResetTokenException;
@@ -43,6 +46,8 @@ class UserManagerTest {
     QueryManager<AppUser> queryManager;
     @Mock
     EmailSender emailSender;
+    @Autowired
+    Environment environment;
 
     UserManager userManager;
 
@@ -50,7 +55,8 @@ class UserManagerTest {
     public void setup() {
         userManager = new UserManager(userRepository,
             randomStringManager, queryManager,
-            emailSender, 20, accessRightRepository);
+            emailSender, accessRightRepository, "",
+            environment);
     }
 
     @Test
