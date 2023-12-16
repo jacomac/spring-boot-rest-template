@@ -5,7 +5,7 @@ It provides basic capabilities that most applications need such as user manageme
 changing log level at runtime, announcements, user impersonation for admins.
 Integration Tests are setup out of the box to run with docker test containers.
 ## SPREST Roadmap
-- [ ] [provide intial db migration script](https://github.com/jacomac/spring-boot-rest-template/issues/1)
+- [x] [provide intial db migration script](https://github.com/jacomac/spring-boot-rest-template/issues/1)
 - [ ] mirror access rights in DB and create initial admin user
 - [ ] make all tests work :recycle:
 - [ ] add a small shopping list sample, so that there is something to do for regular users (v1.0) :notebook:
