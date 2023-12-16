@@ -25,12 +25,12 @@ import static sprest.user.UserRight.values.MANAGE_USERS;
 
 /**
  * Controller for administering all the user master data in the system
- *
  * @author wulf
  */
 @Tag(name = "User Admin Controller", description = "API to manage users, requires the MANAGE_USERS privilege")
 @RestController
 @RequestMapping("/admin/users")
+@RequiredAccessRight(MANAGE_USERS)
 public class UserAdminController {
     private static final String MSG_USER_NOT_FOUND = "Benutzer wurde nicht gefunden";
     private static final String IMPERSONATION_ADMIN_ATTRIBUTE = "SPREST_IMPERSONATION_ADMIN";
@@ -72,7 +72,6 @@ public class UserAdminController {
 	@Operation(summary = "create a new user in the system",
 			description = "creates a new user for the client of the calling user. If the user has the MANAGE_ANNOUNCEMENTS privilege and an id of an existing client is provided, the user will be created for the desired client instead.")
 	@PostMapping
-	@RequiredAccessRight(MANAGE_USERS)
 	public AppUser saveNewUser(@Valid @RequestBody UserDto user, Principal auth) {
 		try {
 			return userManager.createUser(user, userManager.getUserByPrincipal(auth));
@@ -82,7 +81,6 @@ public class UserAdminController {
 	}
 
 	@PutMapping("/{id}")
-	@RequiredAccessRight(MANAGE_USERS)
 	public UserDtoWithId updateUser(@PathVariable("id") int id, @Valid @RequestBody UserDto user, Principal auth) {
 		try {
 			return userManager.updateUser(id, user, userManager.getUserByPrincipal(auth));
@@ -95,7 +93,6 @@ public class UserAdminController {
 
 	@PutMapping("/password-resets/{userId}")
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	@RequiredAccessRight(MANAGE_USERS)
 	public void resetPasswordForUser(@PathVariable("userId") int userId) {
         userManager.sendResetPasswordLink(userId);
 	}
@@ -104,7 +101,6 @@ public class UserAdminController {
 			description = "returns a list of the UserRights that can be assigned to another user administered by the given principal.")
 	@GetMapping("/rights/grantable")
 	@ResponseBody
-	@RequiredAccessRight(MANAGE_USERS)
 	public Iterable<AccessRight> getGrantableRights(Principal auth) {
 		AppUser principal = userManager.getUserByPrincipal(auth);
 		return userManager.getGrantableRights(principal);
@@ -112,14 +108,12 @@ public class UserAdminController {
 
 	// deactivate
 	@PutMapping("/deactivate/{userId}")
-	@RequiredAccessRight(MANAGE_USERS)
 	public UserDtoWithId deactivateUser(@PathVariable("userId") int id) {
 		return toggleActive(id, false);
 	}
 
 	// activate
 	@PutMapping("/activate/{userId}")
-	@RequiredAccessRight(MANAGE_USERS)
 	public UserDtoWithId activateUser(@PathVariable("userId") int id) {
 		return toggleActive(id, true);
 	}

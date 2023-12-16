@@ -1,8 +1,8 @@
-package sprest.rpc;
+package sprest.api;
 
 /**
  * Marker Interface for all search filters used in rpc calls
- * Currently all search filters also need to explicily activate the filter using the useFilter-Flag, as Spring always populates the Optional filter (workaround). 
+ * Currently all search filters also need to explicily activate the filter using the useFilter-Flag, as Spring always populates the Optional filter (workaround).
  * @author wulf
  *
  */

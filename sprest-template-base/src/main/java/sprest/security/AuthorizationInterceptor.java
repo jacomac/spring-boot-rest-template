@@ -93,7 +93,7 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
 
         return authentication.getAuthorities().stream()
             .map(GrantedAuthority::getAuthority)
-            .filter(right -> Objects.equals(right, MANAGE_ANNOUNCEMENTS) || subscribedRights.contains(right))
+            .filter(right -> subscribedRights.contains(right))
             .toList();
     }
 
@@ -102,21 +102,21 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
             .replace(handlerMethod.getBeanType().getPackageName() + ".", "");
         var methodKey = getMethodKey(handlerMethod.getMethod());
 
-        var requiredAuthorities = new ArrayList<String>();
+        var requiredAccessRights = new ArrayList<String>();
 
         if (authoritiesMap.containsKey(controllerName)) {
-            requiredAuthorities.addAll(authoritiesMap.get(controllerName));
+            requiredAccessRights.addAll(authoritiesMap.get(controllerName));
         }
         if (authoritiesMap.containsKey(methodKey)) {
-            requiredAuthorities.addAll(authoritiesMap.get(methodKey));
+            requiredAccessRights.addAll(authoritiesMap.get(methodKey));
         }
 
-        return requiredAuthorities;
+        return requiredAccessRights;
     }
 
     private boolean hasRequiredRights(List<String> requiredRights, List<String> ownedRights) {
         checkIfHasAnyValidRights(ownedRights);
-        return canUseSuperAdminMethod(requiredRights, ownedRights) || canUseRegularMethod(requiredRights, ownedRights);
+        return canUseMethod(requiredRights, ownedRights);
     }
 
     private void checkIfHasAnyValidRights(List<String> ownedRights) {
@@ -125,23 +125,12 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
         }
     }
 
-    public static boolean canUseSuperAdminMethod(List<String> requiredRights, List<String> ownedRights) {
-        return requiredRights.contains(MANAGE_ANNOUNCEMENTS) && ownedRights.contains(MANAGE_ANNOUNCEMENTS);
-    }
-
-    public static boolean canUseRegularMethod(List<String> requiredRights, List<String> ownedRights) {
-        if (ownedRights.contains(MANAGE_ALL)) {
-            return true;
+    public static boolean canUseMethod(List<String> requiredRights, List<String> ownedRights) {
+        String[] allGroupings = new String[]{MANAGE_ALL, ACCESS_ALL, INVOKE_ALL};
+        for (String grouping : allGroupings) {
+            if (ownedRights.contains(grouping) && requiredRights.toString().contains(grouping.substring(0, grouping.length() - 4)))
+                return true;
         }
-
-        if (ownedRights.contains(INVOKE_ALL) && requiredRights.toString().contains("INVOKE")) {
-            return true;
-        }
-
-        if (ownedRights.contains(ACCESS_ALL) && requiredRights.toString().contains("ACCESS")) {
-            return true;
-        }
-
         if (ownedRights.stream().anyMatch(requiredRights::contains)) {
             return true;
         } else {

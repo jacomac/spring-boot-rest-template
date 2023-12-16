@@ -32,12 +32,6 @@ public class ControllerExceptionHandler {
         return Map.of("message", e.getMessage());
     }
 
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(StorageException.class)
-    public void handleStorageException(StorageException e) {
-        log.error("Error accessing file storage.", e);
-    }
-
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(UserInputValidationException.class)
     @ResponseBody
@@ -111,14 +105,6 @@ public class ControllerExceptionHandler {
     @ResponseBody
     public Map<String, String> handleAccessDeniedException(AccessDeniedException e) {
         log.trace("Access denied: {}", e.getMessage());
-        return Map.of("message", e.getMessage());
-    }
-
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(UserActivityException.class)
-    @ResponseBody
-    public Map<String, String> handleUserActivityTypeException(UserActivityException e) {
-        log.trace("Activity creation error: {}", e.getMessage());
         return Map.of("message", e.getMessage());
     }
 
