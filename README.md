@@ -1,9 +1,10 @@
 # Spring Boot Rest Template SPREST
+![Key Visual for the sprest project](assets/img/social-preview-sprest.jpg)
 ## Purpose
 This project is meant as a template to quickly get up an running with a ReSTful backend for a new app or a micro service.
 It provides basic capabilities that most applications need such as user management and serviceability, like e.g. 
 changing log level at runtime, announcements, user impersonation for admins.
-Integration Tests are setup out of the box to run with docker test containers.
+Integration tests are setup out of the box to run with docker test containers.
 ## SPREST Roadmap
 - [x] [provide intial db migration script](https://github.com/jacomac/spring-boot-rest-template/issues/1)
 - [x] [mirror access rights in DB and create initial admin user](https://github.com/jacomac/spring-boot-rest-template/issues/2)
