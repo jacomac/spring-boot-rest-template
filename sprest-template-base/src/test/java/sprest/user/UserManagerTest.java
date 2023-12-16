@@ -6,7 +6,7 @@ import sprest.exception.InavlidOrExpiredPasswordResetTokenException;
 import sprest.exception.NotFoundByUniqueKeyException;
 import sprest.user.dtos.PasswordResetRequest;
 import sprest.user.dtos.UserDto;
-import sprest.user.repositories.UserAuthorityRepository;
+import sprest.user.repositories.AccessRightRepository;
 import sprest.user.repositories.UserRepository;
 import sprest.user.services.RandomStringManager;
 import sprest.utils.DateUtils;
@@ -37,7 +37,7 @@ class UserManagerTest {
     @Mock
     UserRepository userRepository;
     @Mock
-    UserAuthorityRepository userAuthorityRepository;
+    AccessRightRepository accessRightRepository;
     RandomStringManager randomStringManager = new RandomStringManager();
     @Mock
     QueryManager<AppUser> queryManager;
@@ -50,7 +50,7 @@ class UserManagerTest {
     public void setup() {
         userManager = new UserManager(userRepository,
             randomStringManager, queryManager,
-            emailSender, 20, userAuthorityRepository);
+            emailSender, 20, accessRightRepository);
     }
 
     @Test
@@ -137,15 +137,15 @@ class UserManagerTest {
     public void mustReturnGrantableUserRightsForSuperAdmin() {
         // given
         var user = new AppUser();
-        var setupClientsRight = new UserAuthority();
-        setupClientsRight.setAuthority(MANAGE_ANNOUNCEMENTS);
-        user.setRights(Set.of(setupClientsRight));
+        var setupClientsRight = new AccessRight();
+        setupClientsRight.setName(MANAGE_ANNOUNCEMENTS);
+        user.setAccessRights(Set.of(setupClientsRight));
         var allAuthorities = getMockListOfAuthorities(
             List.of("MANAGE_1", "MANAGE_2", "INVOKE_1", "INVOKE_2", "ACCESS_1", MANAGE_ANNOUNCEMENTS));
 
         // when
-        when(userAuthorityRepository.findAll()).thenReturn(allAuthorities);
-        var grantableRights = (List<UserAuthority>) userManager.getGrantableRights(user);
+        when(accessRightRepository.findAll()).thenReturn(allAuthorities);
+        var grantableRights = (List<AccessRight>) userManager.getGrantableRights(user);
 
         // expect
         assertEquals(allAuthorities.size(), grantableRights.size());
@@ -158,17 +158,17 @@ class UserManagerTest {
     public void mustReturnGrantableUserRightsForAdminWithManageAll() {
         // given
         var user = new AppUser();
-        var manageAllRight = new UserAuthority();
-        manageAllRight.setAuthority(MANAGE_ALL);
-        user.setRights(Set.of(manageAllRight));
+        var manageAllRight = new AccessRight();
+        manageAllRight.setName(MANAGE_ALL);
+        user.setAccessRights(Set.of(manageAllRight));
         var allAuthorities = getMockListOfAuthorities(
             List.of("MANAGE_1", "MANAGE_2", "INVOKE_1", "INVOKE_2", "ACCESS_1", MANAGE_ANNOUNCEMENTS));
         var subscribedAuthorities = allAuthorities.stream().filter(
-            auth -> auth.getAuthority().endsWith("_1")).toList();
+            auth -> auth.getName().endsWith("_1")).toList();
 
         // when
-        when(userAuthorityRepository.findAll()).thenReturn(allAuthorities);
-        var grantableRights = (List<UserAuthority>) userManager.getGrantableRights(user);
+        when(accessRightRepository.findAll()).thenReturn(allAuthorities);
+        var grantableRights = (List<AccessRight>) userManager.getGrantableRights(user);
 
         // expect
         assertEquals(subscribedAuthorities.size(), grantableRights.size());
@@ -181,15 +181,15 @@ class UserManagerTest {
     public void mustReturnGrantableUserRightsForAdminWithPartialManageRights() {
         // given
         var user = new AppUser();
-        var manageUsersRight = new UserAuthority();
-        manageUsersRight.setAuthority(MANAGE_USERS);
-        user.setRights(Set.of(manageUsersRight));
+        var manageUsersRight = new AccessRight();
+        manageUsersRight.setName(MANAGE_USERS);
+        user.setAccessRights(Set.of(manageUsersRight));
         var allAuthorities = getMockListOfAuthorities(
             List.of(MANAGE_USERS, "MANAGE_TEST"));
 
         // when
-        when(userAuthorityRepository.findAll()).thenReturn(allAuthorities);
-        var grantableRights = (List<UserAuthority>) userManager.getGrantableRights(user);
+        when(accessRightRepository.findAll()).thenReturn(allAuthorities);
+        var grantableRights = (List<AccessRight>) userManager.getGrantableRights(user);
 
         // expect
         assertEquals(1, grantableRights.size());
@@ -225,27 +225,27 @@ class UserManagerTest {
     public void mustCreateUser() {
         // given
         var admin = new AppUser();
-        var adminRight = new UserAuthority();
-        adminRight.setAuthority(MANAGE_USERS);
+        var adminRight = new AccessRight();
+        adminRight.setName(MANAGE_USERS);
         adminRight.setId(1);
-        admin.setRights(Set.of(adminRight));
+        admin.setAccessRights(Set.of(adminRight));
 
         var dto = new UserDto();
         dto.setUserName("user");
-        dto.setRights(Set.of(adminRight));
+        dto.setAccessRights(Set.of(adminRight));
 
         var user = new AppUser();
         user.setId(1);
 
         var invalidAdmin = new AppUser();
-        invalidAdmin.setRights(Set.of());
+        invalidAdmin.setAccessRights(Set.of());
 
         var invalidDto = new UserDto();
         invalidDto.setUserName("user");
-        invalidDto.setRights(Set.of(new UserAuthority()));
+        invalidDto.setAccessRights(Set.of(new AccessRight()));
 
         // when
-        when(userAuthorityRepository.findAll()).thenReturn(List.of(adminRight));
+        when(accessRightRepository.findAll()).thenReturn(List.of(adminRight));
         when(userRepository.save(any(AppUser.class))).thenReturn(user);
 
         // expect
@@ -273,10 +273,10 @@ class UserManagerTest {
         assertThrows(DuplicateUserException.class, () -> userManager.createUser(userNameDto, new AppUser()));
     }
 
-    private List<UserAuthority> getMockListOfAuthorities(List<String> authNames) {
+    private List<AccessRight> getMockListOfAuthorities(List<String> authNames) {
         return authNames.stream().map(authName -> {
-            var auth = new UserAuthority();
-            auth.setAuthority(authName);
+            var auth = new AccessRight();
+            auth.setName(authName);
             return auth;
         }).toList();
     }

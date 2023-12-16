@@ -39,11 +39,11 @@ public class UserAdminController {
 	// read single
 	@GetMapping("/{id}")
 	@RequiredAuthority(MANAGE_USERS)
-	public UserDao getUser(@PathVariable("id") int id) {
+	public UserDtoWithId getUser(@PathVariable("id") int id) {
 		var user = userManager.getById(id);
         user.setPassword(null);
 
-        return user.toDao();
+        return user.toUserDtoWithId();
 	}
 
 	@Operation(summary = "Get a list of all users in the system that is pageable, sortable and can be filtered",
@@ -81,7 +81,7 @@ public class UserAdminController {
 
 	@PutMapping("/{id}")
 	@RequiredAuthority(MANAGE_USERS)
-	public UserDao updateUser(@PathVariable("id") int id, @Valid @RequestBody UserDto user, Principal auth) {
+	public UserDtoWithId updateUser(@PathVariable("id") int id, @Valid @RequestBody UserDto user, Principal auth) {
 		try {
 			return userManager.updateUser(id, user, userManager.getUserByPrincipal(auth));
 		} catch (NoSuchElementException e) {
@@ -103,7 +103,7 @@ public class UserAdminController {
 	@GetMapping("/rights/grantable")
 	@ResponseBody
 	@RequiredAuthority(MANAGE_USERS)
-	public Iterable<UserAuthority> getGrantableRights(Principal auth) {
+	public Iterable<AccessRight> getGrantableRights(Principal auth) {
 		AppUser principal = userManager.getUserByPrincipal(auth);
 		return userManager.getGrantableRights(principal);
 	}
@@ -111,19 +111,19 @@ public class UserAdminController {
 	// deactivate
 	@PutMapping("/deactivate/{userId}")
 	@RequiredAuthority(MANAGE_USERS)
-	public UserDao deactivateUser(@PathVariable("userId") int id) {
+	public UserDtoWithId deactivateUser(@PathVariable("userId") int id) {
 		return toggleActive(id, false);
 	}
 
 	// activate
 	@PutMapping("/activate/{userId}")
 	@RequiredAuthority(MANAGE_USERS)
-	public UserDao activateUser(@PathVariable("userId") int id) {
+	public UserDtoWithId activateUser(@PathVariable("userId") int id) {
 		return toggleActive(id, true);
 	}
 
-	private UserDao toggleActive(int id, boolean isActive) {
-        return userManager.toggleUserIsActive(id, isActive).toDao();
+	private UserDtoWithId toggleActive(int id, boolean isActive) {
+        return userManager.toggleUserIsActive(id, isActive).toUserDtoWithId();
 	}
 
 	@GetMapping("/username-available/{clientId}/{username}")

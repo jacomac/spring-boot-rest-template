@@ -9,11 +9,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import sprest.ControllerTestBase;
 import sprest.user.AppUser;
-import sprest.user.UserAuthority;
+import sprest.user.AccessRight;
 import sprest.user.UserPrincipal;
 import sprest.user.UserRight;
 import sprest.user.dtos.UserDto;
-import sprest.user.repositories.UserAuthorityRepository;
+import sprest.user.repositories.AccessRightRepository;
 import sprest.user.repositories.UserRepository;
 
 import java.nio.file.Files;
@@ -39,18 +39,18 @@ class UserAdminControllerTest extends ControllerTestBase {
     private final String BASE_PATH = "/admin/users";
 
     @Autowired
-    UserAuthorityRepository userAuthorityRepository;
+    AccessRightRepository accessRightRepository;
     @Autowired
     UserRepository userRepository;
 
     @Test
     public void shouldGetUserById() throws Exception {
         var user = getMockUser(MANAGE_USERS);
-        var rights = userAuthorityRepository.saveAll(user.getRights());
+        var rights = accessRightRepository.saveAll(user.getAccessRights());
         user.setPassword("password");
-        Set<UserAuthority> rightsSet = new HashSet<>();
-        rights.forEach(rightsSet::add);
-        user.setRights(rightsSet);
+        Set<AccessRight> accessRightSet = new HashSet<>();
+        rights.forEach(accessRightSet::add);
+        user.setAccessRights(accessRightSet);
         var savedUser = userRepository.save(user);
 
         mockMvc
@@ -145,12 +145,12 @@ class UserAdminControllerTest extends ControllerTestBase {
         nu.setLastName("lastName123");
         nu.setUserName("admin5");
         nu.setEmail("aa@test.de");
-        var auAuthorities = new HashSet<UserAuthority>();
+        var auAuthorities = new HashSet<AccessRight>();
 
-        var manageUsers = userAuthorityRepository.findByAuthority("MANAGE_USERS");
+        var manageUsers = accessRightRepository.findByName(MANAGE_USERS);
         manageUsers.ifPresent(auAuthorities::add);
 
-        nu.setRights(auAuthorities);
+        nu.setAccessRights(auAuthorities);
 
         var nuJson = objectMapper.writeValueAsString(nu);
         MvcResult apiResponse = mockMvc
@@ -168,14 +168,14 @@ class UserAdminControllerTest extends ControllerTestBase {
             AppUser.class);
         assertTrue(user.getId() > 0);
 
-        var userAuthority = new UserAuthority();
+        var userAuthority = new AccessRight();
         userAuthority.setId(1);
-        userAuthority.setAuthority("MANAGE_ANNOUNCEMENTS");
+        userAuthority.setName("MANAGE_ANNOUNCEMENTS");
 
-        var userRights = user.getRights();
+        var userRights = user.getAccessRights();
         userRights.add(userAuthority);
 
-        user.setRights(userRights);
+        user.setAccessRights(userRights);
 
         var request = objectMapper.writeValueAsString(user);
         mockMvc
@@ -207,13 +207,13 @@ class UserAdminControllerTest extends ControllerTestBase {
         sa.setLastName("lastName123");
         sa.setUserName("admin4");
         sa.setEmail("aa@test.de");
-        var manageUsers = userAuthorityRepository.findByAuthority("MANAGE_USERS");
-        var setupClient = userAuthorityRepository.findByAuthority("MANAGE_ANNOUNCEMENTS");
+        var manageUsers = accessRightRepository.findByName(MANAGE_USERS);
+        var setupClient = accessRightRepository.findByName(MANAGE_ANNOUNCEMENTS);
 
-        var authorities = new HashSet<UserAuthority>();
+        var authorities = new HashSet<AccessRight>();
         manageUsers.ifPresent(authorities::add);
         setupClient.ifPresent(authorities::add);
-        sa.setRights(authorities);
+        sa.setAccessRights(authorities);
 
         var saJson = objectMapper.writeValueAsString(sa);
 
@@ -236,7 +236,7 @@ class UserAdminControllerTest extends ControllerTestBase {
         userDto.setUserName("test_user");
         userDto.setFirstName("Test");
         userDto.setLastName("User");
-        userDto.setRights(Set.of());
+        userDto.setAccessRights(Set.of());
 
         // when
         mockMvc.perform(
@@ -303,9 +303,9 @@ class UserAdminControllerTest extends ControllerTestBase {
         user.setFirstName("Test");
         user.setLastName("User");
         user.setPassword("pass");
-        var right = new UserAuthority();
-        right.setAuthority(MANAGE_ANNOUNCEMENTS);
-        user.setRights(Set.of(userAuthorityRepository.save(right)));
+        var right = new AccessRight();
+        right.setName(MANAGE_ANNOUNCEMENTS);
+        user.setAccessRights(Set.of(accessRightRepository.save(right)));
         var userId = userRepository.save(user).getId();
         var adminId = adminUser.getId();
         var reason = "Very important reason";
@@ -319,7 +319,7 @@ class UserAdminControllerTest extends ControllerTestBase {
             .andDo(print())
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id", is(userId)))
-            .andExpect(jsonPath("$.rights[0].authority", is(right.getAuthority())));
+            .andExpect(jsonPath("$.rights[0].authority", is(right.getName())));
 
         // expect
         checkIfImpersonationSucceeded(adminId, userId, true);
@@ -368,9 +368,9 @@ class UserAdminControllerTest extends ControllerTestBase {
         user.setFirstName("Test");
         user.setLastName("User");
         user.setPassword("pass");
-        var right = new UserAuthority();
-        right.setAuthority(MANAGE_ANNOUNCEMENTS);
-        user.setRights(Set.of(userAuthorityRepository.save(right)));
+        var right = new AccessRight();
+        right.setName(MANAGE_ANNOUNCEMENTS);
+        user.setAccessRights(Set.of(accessRightRepository.save(right)));
         var userId = userRepository.save(user).getId();
 
         // expect

@@ -1,6 +1,6 @@
 package sprest.user.dtos;
 
-import sprest.user.UserAuthority;
+import sprest.user.AccessRight;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,6 +27,6 @@ public class UserDto extends UserSelfAdminDto {
     /**
      * Rechte (kommasepariert)
      */
-    private Set<UserAuthority> rights;
+    private Set<AccessRight> accessRights;
 
 }

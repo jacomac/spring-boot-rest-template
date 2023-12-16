@@ -9,7 +9,7 @@ import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 
-import sprest.api.UserPrivilegeEnum;
+import sprest.api.AccessRightEnum;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -37,7 +37,7 @@ public class AllUserRights {
             rights = new ArrayList<String>();
 
             Reflections reflections = new Reflections("sprest.user", new TypeAnnotationsScanner(), new SubTypesScanner());
-            Set<Class<?>> classes = reflections.getTypesAnnotatedWith(UserPrivilegeEnum.class);
+            Set<Class<?>> classes = reflections.getTypesAnnotatedWith(AccessRightEnum.class);
             for (Class<?> c : classes) {
                 try {
                     Object[] enumValues = c.getEnumConstants();

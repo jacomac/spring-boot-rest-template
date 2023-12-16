@@ -10,8 +10,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class UserDao extends UserDto {
-	
+public class UserDtoWithId extends UserDto {
+
     @NotNull
     private int id;
 

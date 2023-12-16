@@ -10,10 +10,10 @@ import jakarta.persistence.Id;
 
 @Data
 @Entity
-public class UserAuthority {
+public class AccessRight {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_authority_seq")
-    @GenericGenerator(name="user_authority_seq", strategy="increment")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "right_seq")
+    @GenericGenerator(name="right_seq", strategy="increment")
     private Integer id;
-    private String authority;
+    private String name;
 }

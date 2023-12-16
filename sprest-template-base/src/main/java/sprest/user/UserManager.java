@@ -19,7 +19,7 @@ import sprest.exception.NotFoundByUniqueKeyException;
 import sprest.user.dtos.PasswordResetRequest;
 import sprest.user.dtos.UserDto;
 import sprest.user.dtos.UserSelfAdminDto;
-import sprest.user.repositories.UserAuthorityRepository;
+import sprest.user.repositories.AccessRightRepository;
 import sprest.user.repositories.UserRepository;
 import sprest.user.services.RandomStringManager;
 import sprest.utils.DateUtils;
@@ -40,7 +40,7 @@ public class UserManager {
 
     private final int defaultPasswordLength;
     private final UserRepository userRepository;
-    private final UserAuthorityRepository userAuthorityRepository;
+    private final AccessRightRepository accessRightRepository;
     private final RandomStringManager randomStringManager;
     private final QueryManager<AppUser> queryManager;
     private final EmailSender emailSender;
@@ -49,30 +49,30 @@ public class UserManager {
                        RandomStringManager randomStringManager,
                        QueryManager<AppUser> queryManager, EmailSender emailSender,
                        @Value("${user.passwordLength:12}") int passwordLength,
-                       UserAuthorityRepository userAuthorityRepository
+                       AccessRightRepository accessRightRepository
     ) {
         this.userRepository = userRepository;
         this.randomStringManager = randomStringManager;
         this.queryManager = queryManager;
         this.emailSender = emailSender;
         this.defaultPasswordLength = passwordLength;
-        this.userAuthorityRepository = userAuthorityRepository;
+        this.accessRightRepository = accessRightRepository;
     }
 
     // make sure user authorities in DB are the same as in the right enums
     @PostConstruct
     private void checkUserAuthorities() {
         List<String> mismatchingRights = new ArrayList<>();
-        var authorities = userAuthorityRepository.findAll();
+        var authorities = accessRightRepository.findAll();
         List<String> authoritiesAsList = StreamSupport
             .stream(authorities.spliterator(), false)
-            .map(UserAuthority::getAuthority).toList();
+            .map(AccessRight::getName).toList();
         var rightEnumValues = AllUserRights.getInstance().getValues();
 
         // coming from DB
-        for (UserAuthority auth : authorities) {
-            if (!rightEnumValues.contains(auth.getAuthority())) {
-                mismatchingRights.add(auth.getAuthority());
+        for (AccessRight auth : authorities) {
+            if (!rightEnumValues.contains(auth.getName())) {
+                mismatchingRights.add(auth.getName());
             }
         }
         // coming from enum
@@ -124,7 +124,7 @@ public class UserManager {
         String generatedPassword =
             randomStringManager.generateRandomAlphanumericString(defaultPasswordLength);
         user.setPassword("{bcrypt}" + new BCryptPasswordEncoder().encode(generatedPassword));
-        var userAuthorities = user.getRights().toArray(UserAuthority[]::new);
+        var userAuthorities = user.getAccessRights().toArray(AccessRight[]::new);
 
         return userRepository.save(user);
     }
@@ -212,18 +212,18 @@ public class UserManager {
         return generatedPassword;
     }
 
-    public UserDao updateUser(int id, UserDto dto, AppUser principal) {
+    public UserDtoWithId updateUser(int id, UserDto dto, AppUser principal) {
         AppUser user = userRepository.findById(id).orElseThrow();
         checkIfEmailNotDuplicated(user.getEmail(), dto.getEmail());
         checkIfUserNameNotChanged(user.getUserName(), dto.getUserName());
 
-        if (Arrays.deepEquals(dto.getRights().toArray(), user.getRights().toArray())) {
+        if (Arrays.deepEquals(dto.getAccessRights().toArray(), user.getAccessRights().toArray())) {
             checkRightsAssignment(dto, principal);
         }
 
         user.copyDto(dto);
 
-        return userRepository.save(user).toDao();
+        return userRepository.save(user).toUserDtoWithId();
     }
 
     private void checkIfEmailNotDuplicated(String email, String dtoEmail) {
@@ -242,26 +242,26 @@ public class UserManager {
         }
     }
 
-    public UserDao changeSelfUserData(UserSelfAdminDto user, AppUser principal) {
+    public UserDtoWithId changeSelfUserData(UserSelfAdminDto user, AppUser principal) {
         var existingUser = getById(principal.getId());
         existingUser.copySelfAdminDto(user);
 
-        return userRepository.save(existingUser).toDao();
+        return userRepository.save(existingUser).toUserDtoWithId();
     }
 
     private void checkRightsAssignment(UserDto dto, AppUser user) {
-        Iterable<UserAuthority> grantable = getGrantableRights(user);
+        Iterable<AccessRight> grantable = getGrantableRights(user);
 
-        for (UserAuthority authority : dto.getRights()) {
+        for (AccessRight authority : dto.getAccessRights()) {
             if (authority.getId() == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Authority must contains an id");
             }
-            var right = authority.getAuthority();
+            var right = authority.getName();
             if (right.startsWith("MANAGE_") || right.startsWith("SETUP_")) {
                 boolean isAllowed = false;
-                for (UserAuthority g : grantable) {
-                    if (g.getAuthority().equalsIgnoreCase(right)) {
+                for (AccessRight g : grantable) {
+                    if (g.getName().equalsIgnoreCase(right)) {
                         isAllowed = true;
                         break;
                     }
@@ -277,8 +277,8 @@ public class UserManager {
         }
     }
 
-    public Iterable<UserAuthority> getGrantableRights(AppUser user) {
-        var authorities = (List<UserAuthority>) userAuthorityRepository.findAll(); //enforce to
+    public Iterable<AccessRight> getGrantableRights(AppUser user) {
+        var authorities = (List<AccessRight>) accessRightRepository.findAll(); //enforce to
         // only accept ENUM values
 
         if (user.hasRight(MANAGE_ANNOUNCEMENTS)) {
@@ -287,11 +287,11 @@ public class UserManager {
         return authorities.stream()
             .filter(
                 authority -> {
-                    var authName = authority.getAuthority();
+                    var authName = authority.getName();
                     return canGrantAuthority(user, authName);
                 }
             )
-            .sorted(Comparator.comparing(UserAuthority::getAuthority))
+            .sorted(Comparator.comparing(AccessRight::getName))
             .toList();
     }
 

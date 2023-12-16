@@ -18,8 +18,8 @@ public class UserPrincipal implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new LinkedList<>();
-        for (UserAuthority right : user.getRights()) {
-            GrantedAuthority authority = new SimpleGrantedAuthority(right.getAuthority());
+        for (AccessRight accessRight : user.getAccessRights()) {
+            GrantedAuthority authority = new SimpleGrantedAuthority(accessRight.getName());
             authorities.add(authority);
         }
         return authorities;

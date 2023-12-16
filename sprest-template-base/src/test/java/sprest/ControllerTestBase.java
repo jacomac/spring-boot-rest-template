@@ -2,7 +2,7 @@ package sprest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import sprest.user.AppUser;
-import sprest.user.UserAuthority;
+import sprest.user.AccessRight;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,10 +42,10 @@ public class ControllerTestBase {
     @SafeVarargs
     protected final <T> AppUser getMockUser(T... rights) {
         AtomicInteger index = new AtomicInteger(1);
-        Set<UserAuthority> authorities = Arrays.stream(rights).map(x -> {
-            var authority = new UserAuthority();
+        Set<AccessRight> authorities = Arrays.stream(rights).map(x -> {
+            var authority = new AccessRight();
             authority.setId(index.getAndIncrement());
-            authority.setAuthority(x.toString());
+            authority.setName(x.toString());
             return authority;
         }).collect(Collectors.toSet());
 
@@ -55,7 +55,7 @@ public class ControllerTestBase {
         user.setFirstName("Test");
         user.setLastName("User");
         user.setPassword("pass");
-        user.setRights(authorities);
+        user.setAccessRights(authorities);
 
         return user;
     }

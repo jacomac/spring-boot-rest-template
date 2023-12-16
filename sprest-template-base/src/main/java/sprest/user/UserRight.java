@@ -1,6 +1,6 @@
 package sprest.user;
 
-import sprest.api.UserPrivilegeEnum;
+import sprest.api.AccessRightEnum;
 
 /**
  * <h1>An enumeration of all general access rights a user of the system can have</h1>
@@ -10,7 +10,7 @@ import sprest.api.UserPrivilegeEnum;
  * using the suffix _ALL, so e.g. MANAGE_ALL
  *
  */
-@UserPrivilegeEnum
+@AccessRightEnum
 public enum UserRight {
 
 	// REGION-START: Groupings

@@ -6,7 +6,7 @@ changing log level at runtime, announcements, user impersonation for admins.
 Integration Tests are setup out of the box to run with docker test containers.
 ## SPREST Roadmap
 - [ ] [provide intial db migration script](https://github.com/jacomac/spring-boot-rest-template/issues/1)
-- [ ] create initial admin user
+- [ ] mirror access rights in DB and create initial admin user
 - [ ] make all tests work :recycle:
 - [ ] add a small shopping list sample, so that there is something to do for regular users (v1.0) :notebook:
 - [ ] provide support for [OAUTH2 Identity providers](https://spring.io/guides/tutorials/spring-boot-oauth2/) like Github & Google (v1.1) :tada:
@@ -17,10 +17,14 @@ Integration Tests are setup out of the box to run with docker test containers.
 $ ./mvn clean package
 ```
 ## How to run
+from command line:
 ```shell
-$ java -jar target/sprest-template-webapp-0.0.9-SNAPSHOT.jar
+$ java -jar target/sprest-template-webapp-0.9.0-SNAPSHOT.jar
 ```
-
+from within the IDE: run the main class in the webapp module
+```
+sprest.SprestApplication
+```
 ## Runtime configuration
 This micro service has enabled the following [Actuator endpoints](https://docs.spring.io/spring-boot/docs/2.0.x/actuator-api/html/):
 * info - returns basic information about micro service instance
@@ -42,3 +46,11 @@ $ curl -v http://[HOST]:[PORT]/api/actuator/loggers/sprest \
 ```
 Replace `HOST`, `PORT` and `COOKIE_ID` with proper values depending on the environment. 
 Refer to the [actuator documentation](https://docs.spring.io/spring-boot/docs/2.0.x/actuator-api/html/#loggers) for more details.
+
+## Useful Commands
+### Database dump 
+when using in postgre docker container:
+```
+docker exec deployment-postgres-1 pg_dump sprest -U sprest_user > /home/jacomac/dumps/V1_intial_setup.sql
+```
+

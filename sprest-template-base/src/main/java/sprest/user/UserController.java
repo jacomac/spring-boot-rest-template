@@ -45,7 +45,7 @@ public class UserController {
 
     @Operation(summary = "update own user information", description = "method for updating the information on one's own user account (self admin)")
     @PutMapping("/update-current")
-    public UserDao changeUser(@Valid @RequestBody UserSelfAdminDto user, Principal auth) {
+    public UserDtoWithId changeUser(@Valid @RequestBody UserSelfAdminDto user, Principal auth) {
         try {
             AppUser principal = userManager.getUserByPrincipal(auth);
             return userManager.changeSelfUserData(user, principal);

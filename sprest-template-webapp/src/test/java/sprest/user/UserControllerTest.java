@@ -4,7 +4,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import sprest.ControllerTestBase;
-import sprest.user.repositories.UserAuthorityRepository;
+import sprest.user.repositories.AccessRightRepository;
 import sprest.user.repositories.UserRepository;
 
 import java.util.HashSet;
@@ -25,7 +25,7 @@ class UserControllerTest extends ControllerTestBase {
     UserRepository userRepository;
 
     @Autowired
-    UserAuthorityRepository userAuthorityRepository;
+    AccessRightRepository accessRightRepository;
 
     @Test
     public void mustReturnUserPrincipalWithActiveRights() throws Exception {
@@ -38,7 +38,7 @@ class UserControllerTest extends ControllerTestBase {
                 .with(user(new UserPrincipal(u))))
             .andDo(print())
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.rights[0].authority", Matchers.is(MANAGE_ANNOUNCEMENTS)));
+            .andExpect(jsonPath("$.rights[0].right", Matchers.is(MANAGE_ANNOUNCEMENTS)));
     }
 
     @Test
@@ -65,20 +65,20 @@ class UserControllerTest extends ControllerTestBase {
                     .with(user(new UserPrincipal(u))))
             .andDo(print())
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.rights[0].authority", Matchers.is(MANAGE_ANNOUNCEMENTS)));
+            .andExpect(jsonPath("$.rights[0].right", Matchers.is(MANAGE_ANNOUNCEMENTS)));
     }
 
-    private AppUser getTestUser(List<String> authorityNames) {
+    private AppUser getTestUser(List<String> rightNames) {
         var user = new AppUser();
         user.setUserName("sirius-black");
         user.setFirstName("Test");
         user.setLastName("User");
         user.setPassword("p@assw0rd");
-        var authorities = new HashSet<UserAuthority>();
-        authorityNames.forEach(authority -> authorities.add(
-            userAuthorityRepository.findByAuthority(authority).orElseThrow()
+        var rights = new HashSet<AccessRight>();
+        rightNames.forEach(x -> rights.add(
+            accessRightRepository.findByName(x).orElseThrow()
         ));
-        user.setRights(authorities);
+        user.setAccessRights(rights);
 
         return userRepository.save(user);
     }
