@@ -3,6 +3,7 @@ package sprest.user;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import sprest.admin.UserAdminDto;
 import sprest.user.dtos.UserDto;
+import sprest.user.dtos.UserDtoWithId;
 import sprest.user.dtos.UserSelfAdminDto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

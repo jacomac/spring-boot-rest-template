@@ -12,7 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.HandlerInterceptor;
-import sprest.api.RequiredAuthority;
+import sprest.api.RequiredAccessRight;
 import sprest.user.UserManager;
 
 import java.lang.reflect.Method;
@@ -31,11 +31,11 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
         this.userManager = userManager;
         var authoritiesMap = new HashMap<String, List<String>>();
         Set<Method> methodsAnnotatedWith = new Reflections("sprest", new MethodAnnotationsScanner())
-            .getMethodsAnnotatedWith(RequiredAuthority.class);
+            .getMethodsAnnotatedWith(RequiredAccessRight.class);
 
         for (Method method : methodsAnnotatedWith) {
             var key = getMethodKey(method);
-            var methodAuthorities = new ArrayList<>(Arrays.asList(method.getAnnotation(RequiredAuthority.class).value()));
+            var methodAuthorities = new ArrayList<>(Arrays.asList(method.getAnnotation(RequiredAccessRight.class).value()));
             if (authoritiesMap.containsKey(key)) {
                 authoritiesMap.get(key).addAll(methodAuthorities);
             } else {
@@ -43,9 +43,9 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
             }
         }
 
-        Map<String, Object> beans = appContext.getBeansWithAnnotation(RequiredAuthority.class);
+        Map<String, Object> beans = appContext.getBeansWithAnnotation(RequiredAccessRight.class);
         for (String bean : beans.keySet()) {
-            var beanAuthorities = new ArrayList<>(Arrays.asList(Objects.requireNonNull(appContext.findAnnotationOnBean(bean, RequiredAuthority.class)).value()));
+            var beanAuthorities = new ArrayList<>(Arrays.asList(Objects.requireNonNull(appContext.findAnnotationOnBean(bean, RequiredAccessRight.class)).value()));
             var cBean = StringUtils.capitalize(bean);
             if (authoritiesMap.containsKey(cBean)) {
                 authoritiesMap.get(cBean).addAll(beanAuthorities);

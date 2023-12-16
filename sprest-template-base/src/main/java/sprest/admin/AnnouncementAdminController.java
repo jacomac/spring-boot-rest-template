@@ -2,7 +2,7 @@ package sprest.admin;
 
 import sprest.announce.Announcement;
 import sprest.announce.AnnouncementService;
-import sprest.api.RequiredAuthority;
+import sprest.api.RequiredAccessRight;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +14,7 @@ import static sprest.user.UserRight.values.MANAGE_ANNOUNCEMENTS;
 @Tag(name = "Announcement Admin Controller", description = "API to configure an announcement for the end users within a given time frame, requires the MANAGE_ANNOUNCEMENTS privilege")
 @RestController
 @RequestMapping("/admin/announcement")
-@RequiredAuthority(MANAGE_ANNOUNCEMENTS)
+@RequiredAccessRight(MANAGE_ANNOUNCEMENTS)
 public class AnnouncementAdminController {
 
     private final AnnouncementService announcementService;

@@ -18,6 +18,7 @@ import sprest.exception.InavlidOrExpiredPasswordResetTokenException;
 import sprest.exception.NotFoundByUniqueKeyException;
 import sprest.user.dtos.PasswordResetRequest;
 import sprest.user.dtos.UserDto;
+import sprest.user.dtos.UserDtoWithId;
 import sprest.user.dtos.UserSelfAdminDto;
 import sprest.user.repositories.AccessRightRepository;
 import sprest.user.repositories.UserRepository;

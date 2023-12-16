@@ -1,6 +1,6 @@
 package sprest.admin;
 
-import sprest.api.RequiredAuthority;
+import sprest.api.RequiredAccessRight;
 import sprest.exception.DuplicateUserException;
 import sprest.user.*;
 import sprest.user.dtos.UserDto;
@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.validation.Valid;
+import sprest.user.dtos.UserDtoWithId;
+
 import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -38,7 +40,7 @@ public class UserAdminController {
 
 	// read single
 	@GetMapping("/{id}")
-	@RequiredAuthority(MANAGE_USERS)
+	@RequiredAccessRight(MANAGE_USERS)
 	public UserDtoWithId getUser(@PathVariable("id") int id) {
 		var user = userManager.getById(id);
         user.setPassword(null);
@@ -52,7 +54,7 @@ public class UserAdminController {
 					+ " To apply the specified filter, you need to set 'useFilter' to true")
 	@PageableAsQueryParam
 	@GetMapping
-	@RequiredAuthority({MANAGE_USERS})
+	@RequiredAccessRight({MANAGE_USERS})
     public Page<UserAdminDto> getUsersInPages(Principal auth, Optional<UserSearchFilter> filter, Pageable pageable) {
         if (auth == null)
             return null;
@@ -70,7 +72,7 @@ public class UserAdminController {
 	@Operation(summary = "create a new user in the system",
 			description = "creates a new user for the client of the calling user. If the user has the MANAGE_ANNOUNCEMENTS privilege and an id of an existing client is provided, the user will be created for the desired client instead.")
 	@PostMapping
-	@RequiredAuthority(MANAGE_USERS)
+	@RequiredAccessRight(MANAGE_USERS)
 	public AppUser saveNewUser(@Valid @RequestBody UserDto user, Principal auth) {
 		try {
 			return userManager.createUser(user, userManager.getUserByPrincipal(auth));
@@ -80,7 +82,7 @@ public class UserAdminController {
 	}
 
 	@PutMapping("/{id}")
-	@RequiredAuthority(MANAGE_USERS)
+	@RequiredAccessRight(MANAGE_USERS)
 	public UserDtoWithId updateUser(@PathVariable("id") int id, @Valid @RequestBody UserDto user, Principal auth) {
 		try {
 			return userManager.updateUser(id, user, userManager.getUserByPrincipal(auth));
@@ -93,7 +95,7 @@ public class UserAdminController {
 
 	@PutMapping("/password-resets/{userId}")
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	@RequiredAuthority(MANAGE_USERS)
+	@RequiredAccessRight(MANAGE_USERS)
 	public void resetPasswordForUser(@PathVariable("userId") int userId) {
         userManager.sendResetPasswordLink(userId);
 	}
@@ -102,7 +104,7 @@ public class UserAdminController {
 			description = "returns a list of the UserRights that can be assigned to another user administered by the given principal.")
 	@GetMapping("/rights/grantable")
 	@ResponseBody
-	@RequiredAuthority(MANAGE_USERS)
+	@RequiredAccessRight(MANAGE_USERS)
 	public Iterable<AccessRight> getGrantableRights(Principal auth) {
 		AppUser principal = userManager.getUserByPrincipal(auth);
 		return userManager.getGrantableRights(principal);
@@ -110,14 +112,14 @@ public class UserAdminController {
 
 	// deactivate
 	@PutMapping("/deactivate/{userId}")
-	@RequiredAuthority(MANAGE_USERS)
+	@RequiredAccessRight(MANAGE_USERS)
 	public UserDtoWithId deactivateUser(@PathVariable("userId") int id) {
 		return toggleActive(id, false);
 	}
 
 	// activate
 	@PutMapping("/activate/{userId}")
-	@RequiredAuthority(MANAGE_USERS)
+	@RequiredAccessRight(MANAGE_USERS)
 	public UserDtoWithId activateUser(@PathVariable("userId") int id) {
 		return toggleActive(id, true);
 	}

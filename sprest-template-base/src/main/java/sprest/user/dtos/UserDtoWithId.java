@@ -1,4 +1,4 @@
-package sprest.user;
+package sprest.user.dtos;
 
 import jakarta.validation.constraints.NotNull;
 

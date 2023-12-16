@@ -4,6 +4,7 @@ import sprest.exception.DuplicateUserException;
 import sprest.exception.InavlidOrExpiredPasswordResetTokenException;
 import sprest.user.dtos.PasswordResetRequest;
 import sprest.user.dtos.PasswordResetResponse;
+import sprest.user.dtos.UserDtoWithId;
 import sprest.user.dtos.UserSelfAdminDto;
 import sprest.user.repositories.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
