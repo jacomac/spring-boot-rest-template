@@ -33,7 +33,7 @@ This micro service has enabled the following [Actuator endpoints](https://docs.s
 * flyway - reports Flyway migrations
 
 The basic path for the aforementioned endpoints is `/api/actuator`. 
-All endpoints are secured and require `UserRight.MANAGE_SYSTEM_SETTINGS` authority.
+All endpoints are secured and require `MANAGE_SYSTEM_SETTINGS` authority.
 
 ### Change log level at runtime
 To change the log level at runtime execute the following command from a terminal:
