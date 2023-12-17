@@ -15,9 +15,9 @@ Integration tests are setup out of the box to run with docker test containers.
 - [ ] localization of messages in English / German (v1.2)
 
 ## Prerequisites
-* Java 17 LTS
-* Docker Compose installed
-* Java IDE (Maven) for further development, IntelliJ recommended
+* Java 17 LTS / Maven 3
+* ensure you have [Docker Desktop](https://docs.docker.com/desktop/) running
+* a Java IDE for further development, IntelliJ recommended
 
 ## How to build
 ```shell
@@ -26,12 +26,14 @@ $ ./mvn clean package
 ## How to run the App
 ### database
 1. go to [deployment](deployment/) sub folder and open a bash command line
-2. copy .env.template to .env (customization possible, but not necessary) 
-3. start postgre database as docker container with
+2. the frist tiem, you need to copy the `.env.template` to `.env` (customization possible, but not necessary) 
+3. start postgres database as docker container with
 ```shell
 $ ./postres.sh up -d
 ```
-The shell script takes all the regular docker-compose commands, such as `down` for stopping the service again.
+The postgres database server is now listening on localhost on the default port and the sprest db is ready to be used.
+The shell script `postgres.sh` is just a shortcut and takes all the regular docker-compose commands, 
+such as `down` for stopping the container again.
 
 ### application server
 from command line:
