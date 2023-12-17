@@ -22,5 +22,9 @@ public class AccessRight {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "right_seq")
     @GenericGenerator(name="right_seq", strategy="increment")
     private Integer id;
+
+    /**
+     * one of the rights in {@link AllAccessRights#getValues()}
+     */
     private String name;
 }

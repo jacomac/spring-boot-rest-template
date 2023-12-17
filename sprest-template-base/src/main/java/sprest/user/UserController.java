@@ -31,25 +31,25 @@ import java.security.Principal;
 @RequestMapping("/users")
 public class UserController {
 
-    private final UserManager userManager;
+    private final UserService userService;
     private final UserRepository userRepository;
 
-    public UserController(UserManager userManager, UserRepository userRepository) {
-        this.userManager = userManager;
+    public UserController(UserService userService, UserRepository userRepository) {
+        this.userService = userService;
         this.userRepository = userRepository;
     }
 
     @GetMapping("/current")
     public AppUser user(Principal auth) {
-        return userManager.getUserByPrincipal(auth);
+        return userService.getUserByPrincipal(auth);
     }
 
     @Operation(summary = "update own user information", description = "method for updating the information on one's own user account (self admin)")
     @PutMapping("/update-current")
     public UserDtoWithId changeUser(@Valid @RequestBody UserSelfAdminDto user, Principal auth) {
         try {
-            AppUser principal = userManager.getUserByPrincipal(auth);
-            return userManager.changeSelfUserData(user, principal);
+            AppUser principal = userService.getUserByPrincipal(auth);
+            return userService.changeSelfUserData(user, principal);
         } catch (DuplicateUserException | AccessDeniedException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
         }
@@ -70,7 +70,7 @@ public class UserController {
     @PostMapping("/password-resets")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void sendResetPasswordLink(@RequestBody @Valid PasswordResetRequest request) {
-        userManager.sendResetPasswordLink(request);
+        userService.sendResetPasswordLink(request);
     }
 
     @Operation(
@@ -84,20 +84,20 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public PasswordResetResponse resetPassword(@PathVariable("token") String token)
         throws InavlidOrExpiredPasswordResetTokenException {
-        var password = userManager.resetPassword(token);
+        var password = userService.resetPassword(token);
 
         return new PasswordResetResponse(password);
     }
 
     @PutMapping("/resetPassword")
     public String resetPassword(Principal auth) {
-        var user = userManager.getUserByPrincipal(auth);
-        return userManager.resetPassword(user.getId());
+        var user = userService.getUserByPrincipal(auth);
+        return userService.resetPassword(user.getId());
     }
 
     @GetMapping("/rights")
     public Iterable<String> getAvailableUserRights() {
-        return userManager.getAvailableRights();
+        return userService.getAvailableRights();
     }
 
 }

@@ -7,7 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to mark contributed user rights
+ * Annotation to mark user right enums contributed by each module
  * @author wulf
  *
  */

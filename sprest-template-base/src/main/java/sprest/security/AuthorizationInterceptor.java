@@ -13,22 +13,22 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.HandlerInterceptor;
 import sprest.api.RequiredAccessRight;
-import sprest.user.UserManager;
+import sprest.user.UserService;
 
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static sprest.user.UserRight.values.*;
+import static sprest.user.BaseRight.values.*;
 
 public class AuthorizationInterceptor implements HandlerInterceptor {
 
-    private final UserManager userManager;
+    private final UserService userService;
 
     public HashMap<String, List<String>> authoritiesMap;
 
-    public AuthorizationInterceptor(ApplicationContext appContext, UserManager userManager) {
-        this.userManager = userManager;
+    public AuthorizationInterceptor(ApplicationContext appContext, UserService userService) {
+        this.userService = userService;
         var authoritiesMap = new HashMap<String, List<String>>();
         Set<Method> methodsAnnotatedWith = new Reflections("sprest", new MethodAnnotationsScanner())
             .getMethodsAnnotatedWith(RequiredAccessRight.class);
@@ -89,7 +89,7 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
 
     private List<String> getOwnedRights() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        var subscribedRights = (List<String>) userManager.getAvailableRights();
+        var subscribedRights = (List<String>) userService.getAvailableRights();
 
         return authentication.getAuthorities().stream()
             .map(GrantedAuthority::getAuthority)

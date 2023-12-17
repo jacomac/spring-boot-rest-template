@@ -21,7 +21,7 @@ import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static sprest.user.UserRight.values.MANAGE_USERS;
+import static sprest.user.BaseRight.values.MANAGE_USERS;
 
 /**
  * Controller for administering all the user master data in the system
@@ -33,16 +33,15 @@ import static sprest.user.UserRight.values.MANAGE_USERS;
 @RequiredAccessRight(MANAGE_USERS)
 public class UserAdminController {
     private static final String MSG_USER_NOT_FOUND = "Benutzer wurde nicht gefunden";
-    private static final String IMPERSONATION_ADMIN_ATTRIBUTE = "SPREST_IMPERSONATION_ADMIN";
 
     @Autowired
-    private UserManager userManager;
+    private UserService userService;
 
 	// read single
 	@GetMapping("/{id}")
 	@RequiredAccessRight(MANAGE_USERS)
 	public UserDtoWithId getUser(@PathVariable("id") int id) {
-		var user = userManager.getById(id);
+		var user = userService.getById(id);
         user.setPassword(null);
 
         return user.toUserDtoWithId();
@@ -58,11 +57,11 @@ public class UserAdminController {
     public Page<UserAdminDto> getUsersInPages(Principal auth, Optional<UserSearchFilter> filter, Pageable pageable) {
         if (auth == null)
             return null;
-        AppUser principal = userManager.getUserByPrincipal(auth);
+        AppUser principal = userService.getUserByPrincipal(auth);
         assert principal != null;
         return (filter.isPresent() && filter.get().isUseFilter())
-            ? userPageToAdminDto(userManager.getFilteredUsers(filter.get(), pageable))
-            : userPageToAdminDto(userManager.getUsers(pageable));
+            ? userPageToAdminDto(userService.getFilteredUsers(filter.get(), pageable))
+            : userPageToAdminDto(userService.getUsers(pageable));
     }
 
 	private Page<UserAdminDto> userPageToAdminDto(Page<AppUser> users) {
@@ -74,7 +73,7 @@ public class UserAdminController {
 	@PostMapping
 	public AppUser saveNewUser(@Valid @RequestBody UserDto user, Principal auth) {
 		try {
-			return userManager.createUser(user, userManager.getUserByPrincipal(auth));
+			return userService.createUser(user, userService.getUserByPrincipal(auth));
 		} catch (DuplicateUserException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
         }
@@ -83,7 +82,7 @@ public class UserAdminController {
 	@PutMapping("/{id}")
 	public UserDtoWithId updateUser(@PathVariable("id") int id, @Valid @RequestBody UserDto user, Principal auth) {
 		try {
-			return userManager.updateUser(id, user, userManager.getUserByPrincipal(auth));
+			return userService.updateUser(id, user, userService.getUserByPrincipal(auth));
 		} catch (NoSuchElementException e) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, MSG_USER_NOT_FOUND, e);
 		} catch (DuplicateUserException e) {
@@ -94,7 +93,7 @@ public class UserAdminController {
 	@PutMapping("/password-resets/{userId}")
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public void resetPasswordForUser(@PathVariable("userId") int userId) {
-        userManager.sendResetPasswordLink(userId);
+        userService.sendResetPasswordLink(userId);
 	}
 
 	@Operation(summary = "get the rights that can be assigned by the given user manager",
@@ -102,8 +101,8 @@ public class UserAdminController {
 	@GetMapping("/rights/grantable")
 	@ResponseBody
 	public Iterable<AccessRight> getGrantableRights(Principal auth) {
-		AppUser principal = userManager.getUserByPrincipal(auth);
-		return userManager.getGrantableRights(principal);
+		AppUser principal = userService.getUserByPrincipal(auth);
+		return userService.getGrantableRights(principal);
 	}
 
 	// deactivate
@@ -119,16 +118,16 @@ public class UserAdminController {
 	}
 
 	private UserDtoWithId toggleActive(int id, boolean isActive) {
-        return userManager.toggleUserIsActive(id, isActive).toUserDtoWithId();
+        return userService.toggleUserIsActive(id, isActive).toUserDtoWithId();
 	}
 
 	@GetMapping("/username-available/{clientId}/{username}")
 	public boolean checkIfUsernameIsAvailable(@PathVariable("clientId") Integer clientId, @PathVariable("username") String username) {
-		return !userManager.existsByClientIdAndUserName(clientId, username);
+		return !userService.existsByClientIdAndUserName(clientId, username);
 	}
 
 	@GetMapping("/email-available/{email}")
 	public boolean checkIfEmailIsAvailable(@PathVariable("email") String email) {
-		return !userManager.existsByEmail(email);
+		return !userService.existsByEmail(email);
 	}
 }

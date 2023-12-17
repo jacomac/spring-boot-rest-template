@@ -3,7 +3,9 @@
 
 ## User Management and Access Control
 The application template ships with a `UserController` and a `UserAdminController` that handles login, 
-access control manages the user in the database etc.
+access control manages the users in the database etc.
+
+![Class Diagram: User Management and Access Control](diagrams/CD_User-Management-and-Access-Control.png)
 
 The rights system defines single rights connected to certain actions and follows the pattern `<VERB>_<OBJECT>`, so e.g.
 `MANAGE_USERS`. the following VERBS are currently foreseen:

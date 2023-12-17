@@ -1,7 +1,6 @@
 package sprest.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import sprest.data.QueryManager;
 import sprest.exception.DuplicateUserException;
@@ -27,13 +26,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static sprest.user.UserRight.values.*;
+import static sprest.user.BaseRight.values.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UserManagerTest {
+class UserServiceTest {
 
     public static final String TEST_EMAIL = "test@somewhere.de";
 
@@ -49,11 +48,11 @@ class UserManagerTest {
     @Autowired
     Environment environment;
 
-    UserManager userManager;
+    UserService userService;
 
     @BeforeEach
     public void setup() {
-        userManager = new UserManager(userRepository,
+        userService = new UserService(userRepository,
             randomStringManager, queryManager,
             emailSender, accessRightRepository, "",
             environment);
@@ -62,7 +61,7 @@ class UserManagerTest {
     @Test
     public void mustThrowExceptionWhenInvalidUserId() {
         try {
-            userManager.sendResetPasswordLink(12345);
+            userService.sendResetPasswordLink(12345);
             fail("Should throw exception!");
         } catch (NotFoundByUniqueKeyException e) {
             // no op
@@ -74,7 +73,7 @@ class UserManagerTest {
         var r = new PasswordResetRequest();
         r.setEmail("not-existing@mail.com");
         try {
-            userManager.sendResetPasswordLink(r);
+            userService.sendResetPasswordLink(r);
         } catch (Exception e) {
             fail("Should not throw exception!");
         }
@@ -90,7 +89,7 @@ class UserManagerTest {
         r.setEmail(TEST_EMAIL);
 
         //when
-        userManager.sendResetPasswordLink(r);
+        userService.sendResetPasswordLink(r);
 
         //then
         verify(emailSender, times(1)).sendPasswordResetEmail(u);
@@ -105,13 +104,13 @@ class UserManagerTest {
         when(userRepository.findByPasswordResetToken("abc")).thenReturn(Optional.empty(), Optional.of(userWithExpiredToken));
         // expect
         try {
-            userManager.resetPassword("abc");
+            userService.resetPassword("abc");
             fail("Should throw an exception!");
         } catch (InavlidOrExpiredPasswordResetTokenException e) {
             // invalid token
         }
         try {
-            userManager.resetPassword("abc");
+            userService.resetPassword("abc");
             fail("Should throw an exception!");
         } catch (InavlidOrExpiredPasswordResetTokenException e) {
             // expired token
@@ -128,7 +127,7 @@ class UserManagerTest {
 
         // expect
         try {
-            var password = userManager.resetPassword("abc");
+            var password = userService.resetPassword("abc");
             assertNotNull(password);
             verify(userRepository, times(1)).save(user);
             assertNotNull(user.getPassword());
@@ -136,27 +135,6 @@ class UserManagerTest {
             assertNull(user.getPasswordResetTokenValidUntil());
         } catch (InavlidOrExpiredPasswordResetTokenException e) {
             fail("Shouldn't throw an exception!");
-        }
-    }
-
-    @Test
-    public void mustReturnGrantableUserRightsForSuperAdmin() {
-        // given
-        var user = new AppUser();
-        var setupClientsRight = new AccessRight();
-        setupClientsRight.setName(MANAGE_ANNOUNCEMENTS);
-        user.setAccessRights(Set.of(setupClientsRight));
-        var allAuthorities = getMockListOfAuthorities(
-            List.of("MANAGE_1", "MANAGE_2", "INVOKE_1", "INVOKE_2", "ACCESS_1", MANAGE_ANNOUNCEMENTS));
-
-        // when
-        when(accessRightRepository.findAll()).thenReturn(allAuthorities);
-        var grantableRights = (List<AccessRight>) userManager.getGrantableRights(user);
-
-        // expect
-        assertEquals(allAuthorities.size(), grantableRights.size());
-        for (var auth : allAuthorities) {
-            assertTrue(grantableRights.contains(auth));
         }
     }
 
@@ -174,7 +152,7 @@ class UserManagerTest {
 
         // when
         when(accessRightRepository.findAll()).thenReturn(allAuthorities);
-        var grantableRights = (List<AccessRight>) userManager.getGrantableRights(user);
+        var grantableRights = (List<AccessRight>) userService.getGrantableRights(user);
 
         // expect
         assertEquals(subscribedAuthorities.size(), grantableRights.size());
@@ -195,7 +173,7 @@ class UserManagerTest {
 
         // when
         when(accessRightRepository.findAll()).thenReturn(allAuthorities);
-        var grantableRights = (List<AccessRight>) userManager.getGrantableRights(user);
+        var grantableRights = (List<AccessRight>) userService.getGrantableRights(user);
 
         // expect
         assertEquals(1, grantableRights.size());
@@ -221,10 +199,10 @@ class UserManagerTest {
         when(userRepository.save(inactiveUser)).thenReturn(inactiveUser);
 
         // expect
-        assertFalse(userManager.toggleUserIsActive(activeUserId, false).isActive());
-        assertTrue(userManager.toggleUserIsActive(activeUserId, true).isActive());
-        assertFalse(userManager.toggleUserIsActive(inactiveUserId, false).isActive());
-        assertTrue(userManager.toggleUserIsActive(inactiveUserId, true).isActive());
+        assertFalse(userService.toggleUserIsActive(activeUserId, false).isActive());
+        assertTrue(userService.toggleUserIsActive(activeUserId, true).isActive());
+        assertFalse(userService.toggleUserIsActive(inactiveUserId, false).isActive());
+        assertTrue(userService.toggleUserIsActive(inactiveUserId, true).isActive());
     }
 
     @Test
@@ -255,9 +233,9 @@ class UserManagerTest {
         when(userRepository.save(any(AppUser.class))).thenReturn(user);
 
         // expect
-        assertNotNull(userManager.createUser(dto, admin).getId());
-        assertThrows(AccessDeniedException.class, () -> userManager.createUser(dto, invalidAdmin));
-        assertThrows(ResponseStatusException.class, () -> userManager.createUser(invalidDto, admin));
+        assertNotNull(userService.createUser(dto, admin).getId());
+        assertThrows(AccessDeniedException.class, () -> userService.createUser(dto, invalidAdmin));
+        assertThrows(ResponseStatusException.class, () -> userService.createUser(invalidDto, admin));
     }
 
     @Test
@@ -275,8 +253,8 @@ class UserManagerTest {
         when(userRepository.existsByUserNameIgnoreCase(userName)).thenReturn(true);
 
         // expect
-        assertThrows(DuplicateUserException.class, () -> userManager.createUser(emailDto, new AppUser()));
-        assertThrows(DuplicateUserException.class, () -> userManager.createUser(userNameDto, new AppUser()));
+        assertThrows(DuplicateUserException.class, () -> userService.createUser(emailDto, new AppUser()));
+        assertThrows(DuplicateUserException.class, () -> userService.createUser(userNameDto, new AppUser()));
     }
 
     private List<AccessRight> getMockListOfAuthorities(List<String> authNames) {

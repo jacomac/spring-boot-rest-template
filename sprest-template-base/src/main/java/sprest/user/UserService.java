@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import sprest.data.QueryManager;
 import sprest.exception.DuplicateUserException;
@@ -34,13 +34,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static sprest.user.UserRight.values.MANAGE_ALL;
-import static sprest.user.UserRight.values.MANAGE_ANNOUNCEMENTS;
+import static sprest.user.BaseRight.values.MANAGE_ALL;
+import static sprest.user.BaseRight.values.MANAGE_ANNOUNCEMENTS;
 
 @Slf4j
-@Component
+@Service
 @Transactional
-public class UserManager {
+public class UserService {
 
     private static final Set<String> DEFAULT_ADMIN_ACCESS_RIGHTS = Set.of("ACCESS_ALL", "MANAGE_ALL");
     private final String defaultAdminPassword;
@@ -51,7 +51,7 @@ public class UserManager {
     private final QueryManager<AppUser> queryManager;
     private final EmailSender emailSender;
 
-    public UserManager(UserRepository userRepository,
+    public UserService(UserRepository userRepository,
                        RandomStringManager randomStringManager,
                        QueryManager<AppUser> queryManager, EmailSender emailSender,
                        AccessRightRepository accessRightRepository, @Value("${sprest.admin.password}") String defaultAdminPassword,
@@ -71,7 +71,7 @@ public class UserManager {
      */
     @PostConstruct
     private void checkUserAuthorities() {
-        var allRights = AllUserRights.getInstance().getValues();
+        var allRights = AllAccessRights.getInstance().getValues();
         if (accessRightRepository.count() == 0) {
             createDefaultAdminUser(allRights);
         } else {
@@ -296,13 +296,13 @@ public class UserManager {
     private void checkRightsAssignment(UserDto dto, AppUser user) {
         Iterable<AccessRight> grantable = getGrantableRights(user);
 
-        for (AccessRight authority : dto.getAccessRights()) {
-            if (authority.getId() == null) {
+        for (AccessRight accessRight : dto.getAccessRights()) {
+            if (accessRight.getId() == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Authority must contains an id");
+                    "access right must contain an id");
             }
-            var right = authority.getName();
-            if (right.startsWith("MANAGE_") || right.startsWith("SETUP_")) {
+            var right = accessRight.getName();
+            if (right.startsWith("MANAGE_")) {
                 boolean isAllowed = false;
                 for (AccessRight g : grantable) {
                     if (g.getName().equalsIgnoreCase(right)) {
@@ -341,18 +341,14 @@ public class UserManager {
 
     private boolean canGrantAuthority(AppUser user, String authName) {
         String managePrefix = "MANAGE_";
-        String setupPrefix = "SETUP_";
 
         boolean isManageRight = authName.startsWith(managePrefix);
         boolean canGrantManageRight = (user.hasRight(authName) || user.hasRight(MANAGE_ALL));
-        boolean isNotManageOrSetupRight =
-            !(authName.startsWith(managePrefix) || authName.startsWith(setupPrefix));
-
-        return (isManageRight && canGrantManageRight) || isNotManageOrSetupRight;
+        return (isManageRight && canGrantManageRight);
     }
 
     public Iterable<String> getAvailableRights() {
-        return AllUserRights.getInstance().getValues();
+        return AllAccessRights.getInstance().getValues();
     }
 
     public Boolean existsByClientIdAndUserName(Integer clientId, String username) {

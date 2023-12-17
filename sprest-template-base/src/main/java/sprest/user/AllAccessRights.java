@@ -18,20 +18,24 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-public class AllUserRights {
-    private static AllUserRights instance;
+public class AllAccessRights {
+    private static AllAccessRights instance;
     private List<String> rights;
 
-    private AllUserRights() {
+    private AllAccessRights() {
     }
 
-    public static synchronized AllUserRights getInstance() {
+    public static synchronized AllAccessRights getInstance() {
         if (instance == null) {
-            instance = new AllUserRights();
+            instance = new AllAccessRights();
         }
         return instance;
     }
 
+    /**
+     * Get all access rights available in ths system, across all modules
+     * @return all access rights as stings that have been aggregated from enums annotated with {@link AccessRightEnum } and are located in a sprest.user package
+     */
     public synchronized List<String> getValues() {
         if (rights == null) {
             rights = new ArrayList<String>();

@@ -1,6 +1,6 @@
 package sprest.security;
 
-import sprest.user.UserManager;
+import sprest.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -14,6 +14,8 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import static sprest.user.BaseRight.values.MANAGE_SYSTEM_SETTINGS;
 
 /**
  * The security configuration used in production with strict security settings
@@ -29,7 +31,7 @@ public class SecurityConfiguration {
     private ApplicationContext appContext;
 
     @Autowired
-    private UserManager userManager;
+    private UserService userService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -37,11 +39,22 @@ public class SecurityConfiguration {
             CookieCsrfTokenRepository.withHttpOnlyFalse();
         cookieCsrfTokenRepository.setCookiePath("/");
 
-        var securityConfiguration = SecurityManager.configureCommon(http)
+        var securityConfiguration = http
+            .securityContext((securityContext) -> securityContext.requireExplicitSave(true))
+            .authorizeHttpRequests()
+            .requestMatchers("/index.html", "/", "/logout").permitAll()
+            .requestMatchers("/users/password-resets/**").permitAll()
+            .requestMatchers("/announcement").permitAll()
+            .requestMatchers("/actuator/**").hasAuthority(MANAGE_SYSTEM_SETTINGS)
+            .anyRequest().authenticated()
+            .and()
+            .httpBasic()
+            .and()
+            .cors()
             .and()
             .csrf()
             .csrfTokenRepository(cookieCsrfTokenRepository)
-            .ignoringRequestMatchers("/ext/**");
+            .ignoringRequestMatchers("/ext/**"); // namespace for services exposed to the outside (INVOKE rights intended to be used here)
 
         return securityConfiguration.and().build();
     }
@@ -52,7 +65,7 @@ public class SecurityConfiguration {
         return new WebMvcConfigurer() {
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
-                registry.addInterceptor(new AuthorizationInterceptor(appContext, userManager));
+                registry.addInterceptor(new AuthorizationInterceptor(appContext, userService));
             }
 
             @Override

@@ -15,7 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static sprest.user.UserRight.values.MANAGE_ANNOUNCEMENTS;
+import static sprest.user.BaseRight.values.MANAGE_ANNOUNCEMENTS;
 
 class UserControllerTest extends ControllerTestBase {
 

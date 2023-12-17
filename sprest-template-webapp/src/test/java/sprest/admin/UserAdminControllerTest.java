@@ -4,14 +4,13 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import sprest.ControllerTestBase;
 import sprest.user.AppUser;
 import sprest.user.AccessRight;
 import sprest.user.UserPrincipal;
-import sprest.user.UserRight;
+import sprest.user.BaseRight;
 import sprest.user.dtos.UserDto;
 import sprest.user.repositories.AccessRightRepository;
 import sprest.user.repositories.UserRepository;
@@ -29,7 +28,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static sprest.user.UserRight.values.*;
+import static sprest.user.BaseRight.values.*;
 
 /**
  * @author Konrad Wulf
@@ -82,7 +81,7 @@ class UserAdminControllerTest extends ControllerTestBase {
                 user(new UserPrincipal(clientAdmin))))
             .andDo(print())
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$..*", Matchers.hasItem(UserRight.MANAGE_USERS.toString())));
+            .andExpect(jsonPath("$..*", Matchers.hasItem(BaseRight.MANAGE_USERS.toString())));
     }
 
     @Test
@@ -191,43 +190,6 @@ class UserAdminControllerTest extends ControllerTestBase {
     }
 
     @Test
-    public void shouldValidateSuperAdminCapabilities() throws Exception {
-        var superAdmin = getMockUser(MANAGE_ANNOUNCEMENTS, MANAGE_ALL);
-
-        mockMvc
-            .perform(
-                get(BASE_PATH + "/rights/grantable").with(user(new UserPrincipal(superAdmin))))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$..*", Matchers.hasItem(MANAGE_ANNOUNCEMENTS)))
-            .andReturn();
-
-        var sa = new UserDto();
-        sa.setFirstName("firstName123");
-        sa.setLastName("lastName123");
-        sa.setUserName("admin4");
-        sa.setEmail("aa@test.de");
-        var manageUsers = accessRightRepository.findByName(MANAGE_USERS);
-        var setupClient = accessRightRepository.findByName(MANAGE_ANNOUNCEMENTS);
-
-        var authorities = new HashSet<AccessRight>();
-        manageUsers.ifPresent(authorities::add);
-        setupClient.ifPresent(authorities::add);
-        sa.setAccessRights(authorities);
-
-        var saJson = objectMapper.writeValueAsString(sa);
-
-        mockMvc
-            .perform(
-                post(BASE_PATH)
-                    .content(saJson)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .with(user(new UserPrincipal(superAdmin)))
-                    .with(csrf()))
-            .andExpect(status().isOk());
-    }
-
-    @Test
     public void shouldReturnErrorWhenDuplicatedDataOnCreation() throws Exception {
         // given
         var adminUser = getMockUser(MANAGE_USERS);
@@ -294,117 +256,9 @@ class UserAdminControllerTest extends ControllerTestBase {
     }
 
     @Test
-    public void mustImpersonateUser() throws Exception {
-        // given
-        var adminUser = getMockUser(MANAGE_USERS);
-        var user = new AppUser();
-        user.setEmail("test.email@sprest.de");
-        user.setUserName("test_user");
-        user.setFirstName("Test");
-        user.setLastName("User");
-        user.setPassword("pass");
-        var right = new AccessRight();
-        right.setName(MANAGE_ANNOUNCEMENTS);
-        user.setAccessRights(Set.of(accessRightRepository.save(right)));
-        var userId = userRepository.save(user).getId();
-        var adminId = adminUser.getId();
-        var reason = "Very important reason";
-
-        // when
-        mockMvc.perform(
-                post(BASE_PATH + "/impersonate/" + userId)
-                    .with(user(new UserPrincipal(adminUser)))
-                    .with(csrf())
-                    .param("reason", reason))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id", is(userId)))
-            .andExpect(jsonPath("$.rights[0].authority", is(right.getName())));
-
-        // expect
-        checkIfImpersonationSucceeded(adminId, userId, true);
-
-        // when
-        mockMvc.perform(
-                post(BASE_PATH + "/stopImpersonation")
-                    .with(csrf()))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id", is(adminUser.getId())))
-            .andExpect(jsonPath("$.rights[*].authority", containsInAnyOrder(MANAGE_ANNOUNCEMENTS, MANAGE_USERS)));
-
-        // expect
-        checkIfImpersonationSucceeded(adminId, userId, false);
-    }
-
-    private void checkIfImpersonationSucceeded(int adminId, int userId, boolean impersonationActive) throws Exception {
-        mockMvc.perform(
-                get("/users/current")
-                    .with(csrf()))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id", is(impersonationActive ? userId : adminId)));
-
-        mockMvc.perform(
-                get(BASE_PATH + "/" + userId) // requires MANAGE_USERS right
-                    .with(csrf()))
-            .andDo(print())
-            .andExpect(status().is(impersonationActive ? HttpStatus.FORBIDDEN.value() : HttpStatus.OK.value()));
-
-        mockMvc.perform(
-                get("/admin/employees")   // requires MANAGE_STAFF right
-                    .with(csrf()))
-            .andDo(print())
-            .andExpect(status().is(impersonationActive ? HttpStatus.OK.value() : HttpStatus.FORBIDDEN.value()));
-    }
-
-    @Test
-    public void shouldReturnErrorWhenSuperAdminImpersonationAttempted() throws Exception {
-        // given
-        var adminUser = getMockUser(MANAGE_ANNOUNCEMENTS);
-        var user = new AppUser();
-        user.setEmail("test.email@sprest.de");
-        user.setUserName("test_user");
-        user.setFirstName("Test");
-        user.setLastName("User");
-        user.setPassword("pass");
-        var right = new AccessRight();
-        right.setName(MANAGE_ANNOUNCEMENTS);
-        user.setAccessRights(Set.of(accessRightRepository.save(right)));
-        var userId = userRepository.save(user).getId();
-
-        // expect
-        mockMvc.perform(
-                post(BASE_PATH + "/impersonate/" + userId)
-                    .with(user(new UserPrincipal(adminUser)))
-                    .with(csrf())
-                    .param("reason", "Very important reason"))
-            .andDo(print())
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.message", containsString(
-                String.format("Sie dürfen nicht als Benutzer %s ausgeben, da dieser auch Superadmin ist.", user.getUserName()))));
-    }
-    @Test
-    public void shouldReturnErrorWhenNoImpersonationReasonProvided() throws Exception {
-        // given
-        var adminUser = getMockUser(MANAGE_ANNOUNCEMENTS);
-        var userId = 9;
-
-        // expect
-        mockMvc.perform(
-                post(BASE_PATH + "/impersonate/" + userId)
-                    .with(user(new UserPrincipal(adminUser)))
-                    .with(csrf()))
-            .andDo(print())
-            .andExpect(status().isBadRequest())
-            .andExpect(status().reason(containsString(
-                "Required request parameter 'reason' for method parameter type String is not present")));
-    }
-
-    @Test
     public void shouldIgnoreCasingInAnAvailabilityCheck() throws Exception {
         // given
-        var user = getMockUser(MANAGE_ANNOUNCEMENTS);
+        var user = getMockUser(MANAGE_USERS);
         user.setEmail("mail@mail.com");
         var savedUser = userRepository.save(user);
 

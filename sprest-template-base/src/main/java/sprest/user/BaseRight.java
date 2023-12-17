@@ -11,7 +11,7 @@ import sprest.api.AccessRightEnum;
  *
  */
 @AccessRightEnum
-public enum UserRight {
+public enum BaseRight {
 
 	// REGION-START: Groupings
 	/**

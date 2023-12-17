@@ -3,7 +3,7 @@
 ## Purpose
 This project is meant as a template to quickly get up an running with a java spring boot ReSTful backend for a new app or a micro service.
 It provides basic capabilities that most applications need such as user management and serviceability, like e.g. 
-changing log level at runtime, announcements, user impersonation for admins.
+changing log level at runtime and making announcements.
 Integration tests are setup out of the box to run with docker test containers.
 ## SPREST Roadmap
 - [x] [provide intial db migration script](https://github.com/jacomac/spring-boot-rest-template/issues/1)

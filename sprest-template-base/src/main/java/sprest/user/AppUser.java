@@ -62,7 +62,7 @@ public class AppUser {
 
     /**
      * comma separated list of access rights assigned to this app user
-     * @see {@link AllUserRights#getValues()} and enums ennotated with {@link sprest.api.AccessRightEnum}
+     * @see {@link AllAccessRights#getValues()} and enums ennotated with {@link sprest.api.AccessRightEnum}
      */
     @ManyToMany
     @Fetch(FetchMode.JOIN)

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
-import static sprest.user.UserRight.values.MANAGE_ANNOUNCEMENTS;
+import static sprest.user.BaseRight.values.MANAGE_ANNOUNCEMENTS;
 
 
 @Tag(name = "Announcement Admin Controller", description = "API to configure an announcement for the end users within a given time frame, requires the MANAGE_ANNOUNCEMENTS privilege")
