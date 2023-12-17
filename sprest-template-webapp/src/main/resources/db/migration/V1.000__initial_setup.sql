@@ -30,8 +30,6 @@ CREATE TABLE public.access_right (
 );
 
 
-ALTER TABLE public.access_right OWNER TO sprest_user;
-
 --
 -- Name: announcement; Type: TABLE; Schema: public; Owner: sprest_user
 --
@@ -44,8 +42,6 @@ CREATE TABLE public.announcement (
     start_date timestamp(6) without time zone NOT NULL
 );
 
-
-ALTER TABLE public.announcement OWNER TO sprest_user;
 
 --
 -- Name: app_user; Type: TABLE; Schema: public; Owner: sprest_user
@@ -65,8 +61,6 @@ CREATE TABLE public.app_user (
 );
 
 
-ALTER TABLE public.app_user OWNER TO sprest_user;
-
 --
 -- Name: app_user_access_rights; Type: TABLE; Schema: public; Owner: sprest_user
 --
@@ -76,8 +70,6 @@ CREATE TABLE public.app_user_access_rights (
     access_rights_id integer NOT NULL
 );
 
-
-ALTER TABLE public.app_user_access_rights OWNER TO sprest_user;
 
 --
 -- Data for Name: access_right; Type: TABLE DATA; Schema: public; Owner: sprest_user

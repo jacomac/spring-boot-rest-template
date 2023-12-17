@@ -22,9 +22,8 @@ public class UserDetailsServiceTest {
     UserDetailsService userDetailsService;
 
     @Test
-    public void mustLoadUserByClientShortcutAndUserName() {
+    public void mustLoadUserByUserName() {
         // given
-        var clientShortcut = "cli";
         var userName = "user";
         var user = new AppUser();
         user.setUserName(userName);
@@ -32,8 +31,7 @@ public class UserDetailsServiceTest {
         // when
         Mockito.when(userRepository.findByUserName(userName))
             .thenReturn(Optional.of(user));
-        var foundUser = userDetailsService.loadUserByUsername(
-            String.join("/", clientShortcut, userName));
+        var foundUser = userDetailsService.loadUserByUsername(userName);
 
         // then
         assertEquals(userName, foundUser.getUsername());
@@ -58,16 +56,15 @@ public class UserDetailsServiceTest {
     @Test
     public void mustThrowExceptionWhenUserNotFound() {
         // given
-        var clientShortcut = "cli";
         var userName = "user";
 
         // when
         Mockito.when(userRepository.findByUserName(userName))
             .thenReturn(Optional.empty());
         UsernameNotFoundException e = assertThrows(UsernameNotFoundException.class,
-            () -> userDetailsService.loadUserByUsername(String.join("/", clientShortcut, userName)));
+            () -> userDetailsService.loadUserByUsername(userName));
 
         // then
-        assertTrue(e.getMessage().contains(String.join("/", clientShortcut, userName)));
+        assertTrue(e.getMessage().contains(userName));
     }
 }

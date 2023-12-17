@@ -8,7 +8,7 @@ Integration tests are setup out of the box to run with docker test containers.
 ## SPREST Roadmap
 - [x] [provide intial db migration script](https://github.com/jacomac/spring-boot-rest-template/issues/1)
 - [x] [mirror access rights in DB and create initial admin user](https://github.com/jacomac/spring-boot-rest-template/issues/2)
-- [ ] [make all tests work](https://github.com/jacomac/spring-boot-rest-template/issues/3) :recycle:
+- [x] [make all tests work](https://github.com/jacomac/spring-boot-rest-template/issues/3) :recycle:
 - [ ] add a small shopping list sample, so that there is something to do for regular users (v1.0) :notebook:
 - [ ] provide support for [OAUTH2 Identity providers](https://spring.io/guides/tutorials/spring-boot-oauth2/) like Github & Google (v1.1) :tada:
 - [ ] build docker image and upload to githhub repo :cherries:

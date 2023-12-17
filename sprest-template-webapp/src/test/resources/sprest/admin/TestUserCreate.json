@@ -1,0 +1,14 @@
+{
+  "email": "aa@test.de",
+  "lastName": "lastName123",
+  "firstName": "firstName123",
+  "title": "",
+  "active": true,
+  "userName": "admin5",
+  "accessRights": [
+    {
+      "id": 1,
+      "name": "MANAGE_ALL"
+    }
+  ]
+}

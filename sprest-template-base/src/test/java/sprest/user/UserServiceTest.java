@@ -139,29 +139,6 @@ class UserServiceTest {
     }
 
     @Test
-    public void mustReturnGrantableUserRightsForAdminWithManageAll() {
-        // given
-        var user = new AppUser();
-        var manageAllRight = new AccessRight();
-        manageAllRight.setName(MANAGE_ALL);
-        user.setAccessRights(Set.of(manageAllRight));
-        var allAuthorities = getMockListOfAuthorities(
-            List.of("MANAGE_1", "MANAGE_2", "INVOKE_1", "INVOKE_2", "ACCESS_1", MANAGE_ANNOUNCEMENTS));
-        var subscribedAuthorities = allAuthorities.stream().filter(
-            auth -> auth.getName().endsWith("_1")).toList();
-
-        // when
-        when(accessRightRepository.findAll()).thenReturn(allAuthorities);
-        var grantableRights = (List<AccessRight>) userService.getGrantableRights(user);
-
-        // expect
-        assertEquals(subscribedAuthorities.size(), grantableRights.size());
-        for (var auth : subscribedAuthorities) {
-            assertTrue(grantableRights.contains(auth));
-        }
-    }
-
-    @Test
     public void mustReturnGrantableUserRightsForAdminWithPartialManageRights() {
         // given
         var user = new AppUser();

@@ -34,8 +34,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static sprest.user.BaseRight.values.MANAGE_ALL;
-import static sprest.user.BaseRight.values.MANAGE_ANNOUNCEMENTS;
+import static sprest.user.BaseRight.values.*;
 
 @Slf4j
 @Service
@@ -325,9 +324,6 @@ public class UserService {
         var authorities = (List<AccessRight>) accessRightRepository.findAll(); //enforce to
         // only accept ENUM values
 
-        if (user.hasRight(MANAGE_ANNOUNCEMENTS)) {
-            return authorities;
-        }
         return authorities.stream()
             .filter(
                 authority -> {
@@ -344,7 +340,7 @@ public class UserService {
 
         boolean isManageRight = authName.startsWith(managePrefix);
         boolean canGrantManageRight = (user.hasRight(authName) || user.hasRight(MANAGE_ALL));
-        return (isManageRight && canGrantManageRight);
+        return ((isManageRight && canGrantManageRight) || !isManageRight);
     }
 
     public Iterable<String> getAvailableRights() {

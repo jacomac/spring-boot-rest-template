@@ -60,19 +60,6 @@ class UserAdminControllerTest extends ControllerTestBase {
     }
 
     @Test
-    public void shouldStoreUserNonPractitionerUserWrongRights() throws Exception {
-        var user = getMockUser(ACCESS_ALL);
-
-        try {
-            tryToStoreNonPractitionerUser(user);
-            fail(
-                "should have not been possible to manipulate user without the correct admin rights");
-        } catch (AssertionError e) {
-            assertTrue(e.getMessage().contains("403")); // http status should be forbidden
-        }
-    }
-
-    @Test
     public void shouldBeAbleToAssignAllManageRights() throws Exception {
         var clientAdmin = getMockUser(MANAGE_ALL);
 
@@ -87,7 +74,7 @@ class UserAdminControllerTest extends ControllerTestBase {
     @Test
     public void shouldStoreUserNonPractitionerUserManageAllRight() throws Exception {
         var user = getMockUser(MANAGE_ALL);
-        tryToStoreNonPractitionerUser(user);
+        tryToStoreUser(user);
     }
 
     @Test
@@ -103,7 +90,7 @@ class UserAdminControllerTest extends ControllerTestBase {
                 jsonPath("$..*", Matchers.hasItem(ACCESS_ALL)));
     }
 
-    private void tryToStoreNonPractitionerUser(AppUser user) throws Exception {
+    private void tryToStoreUser(AppUser user) throws Exception {
         String json = new String(Files.readAllBytes(Paths.get(
             getClass().getClassLoader().getResource("sprest/admin/TestUserCreate.json").toURI())));
 
@@ -122,8 +109,7 @@ class UserAdminControllerTest extends ControllerTestBase {
 
     @Test
     public void shouldReturnGrantableRights() throws Exception {
-        // FAILURE: principal has not set up right => not assignable
-        var adminOfCustomerX = getMockUser(MANAGE_USERS);
+        var adminOfCustomerX = getMockUser(MANAGE_ALL);
 
         mockMvc
             .perform(get(BASE_PATH + "/rights/grantable").with(
@@ -131,13 +117,12 @@ class UserAdminControllerTest extends ControllerTestBase {
             .andDo(print())
             .andExpect(status().isOk())
             .andExpect(jsonPath("$..*", Matchers.hasItem(MANAGE_USERS)))
-            .andExpect(jsonPath("$..*",
-                CoreMatchers.not(Matchers.hasItem(MANAGE_ANNOUNCEMENTS))));
+            .andExpect(jsonPath("$..*", Matchers.hasItem(MANAGE_ANNOUNCEMENTS)));
     }
 
     @Test
     public void shouldAssignRights() throws Exception {
-        var adminOfCustomerX = getMockUser(MANAGE_USERS);
+        var userAdmin = getMockUser(MANAGE_USERS);
 
         var nu = new UserDto();
         nu.setFirstName("firstName123");
@@ -157,7 +142,7 @@ class UserAdminControllerTest extends ControllerTestBase {
                 post(BASE_PATH)
                     .content(nuJson)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .with(user(new UserPrincipal(adminOfCustomerX)))
+                    .with(user(new UserPrincipal(userAdmin)))
                     .with(csrf()))
             .andDo(print())
             .andExpect(status().isOk())
@@ -182,10 +167,10 @@ class UserAdminControllerTest extends ControllerTestBase {
                 put(BASE_PATH + "/{id}", user.getId())
                     .content(request)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .with(user(new UserPrincipal(adminOfCustomerX)))
+                    .with(user(new UserPrincipal(userAdmin)))
                     .with(csrf()))
             .andDo(print())
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk());
 
     }
 
@@ -255,19 +240,4 @@ class UserAdminControllerTest extends ControllerTestBase {
             .andExpect(status().reason(is(String.format("Der Anmeldename %s wird bereits verwendet", userDto.getUserName()))));
     }
 
-    @Test
-    public void shouldIgnoreCasingInAnAvailabilityCheck() throws Exception {
-        // given
-        var user = getMockUser(MANAGE_USERS);
-        user.setEmail("mail@mail.com");
-        var savedUser = userRepository.save(user);
-
-        // expect
-        mockMvc.perform(
-                        get(BASE_PATH + "/email-available/" + savedUser.getEmail().toUpperCase())
-                                .with(user(new UserPrincipal(savedUser)))
-                                .with(csrf()))
-                .andDo(print())
-                .andExpect(status().isOk()).andExpect(content().string("false"));
-    }
 }

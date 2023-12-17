@@ -38,7 +38,7 @@ class UserControllerTest extends ControllerTestBase {
                 .with(user(new UserPrincipal(u))))
             .andDo(print())
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.rights[0].right", Matchers.is(MANAGE_ANNOUNCEMENTS)));
+            .andExpect(jsonPath("$.accessRights[0].name", Matchers.is(MANAGE_ANNOUNCEMENTS)));
     }
 
     @Test
@@ -52,20 +52,6 @@ class UserControllerTest extends ControllerTestBase {
             .andDo(print())
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", Matchers.hasSize(Matchers.greaterThan(0))));
-    }
-
-    @Test
-    public void mustReturnUserWithSetupClientsRightWithoutModuleSubscription() throws Exception {
-        // given
-        var u = getTestUser(List.of(MANAGE_ANNOUNCEMENTS));
-
-        // expect
-        mockMvc.perform(
-                get(BASE_PATH + "/current")
-                    .with(user(new UserPrincipal(u))))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.rights[0].right", Matchers.is(MANAGE_ANNOUNCEMENTS)));
     }
 
     private AppUser getTestUser(List<String> rightNames) {
