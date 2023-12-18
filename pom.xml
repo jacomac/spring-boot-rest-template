@@ -22,6 +22,7 @@
 
     <modules>
         <module>sprest-template-base</module>
+        <module>sprest-shopping-sample</module>
         <module>sprest-template-webapp</module>
     </modules>
 
