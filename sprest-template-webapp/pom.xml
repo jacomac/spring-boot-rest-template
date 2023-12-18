@@ -25,6 +25,12 @@
             <artifactId>sprest-template-base</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
+        <!-- replace / extend with your modules below-->
+        <dependency>
+            <groupId>sprest</groupId>
+            <artifactId>sprest-shopping-sample</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>

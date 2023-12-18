@@ -11,7 +11,7 @@ Integration tests are setup out of the box to run with docker test containers.
 - [x] [make all tests work](https://github.com/jacomac/spring-boot-rest-template/issues/3) :recycle:
 - [ ] [add a small shopping list sample](https://github.com/jacomac/spring-boot-rest-template/issues/4), so that there is something to do for regular users (v1.0) :notebook:
 - [ ] provide support for [OAUTH2 Identity providers](https://spring.io/guides/tutorials/spring-boot-oauth2/) like Github & Google (v1.1) :tada:
-- [ ] build docker image and upload to githhub repo :cherries:
+- [ ] build docker image and upload to a docker repository :cherries:
 - [ ] localization of messages in English / German (v1.2)
 
 ## Prerequisites
