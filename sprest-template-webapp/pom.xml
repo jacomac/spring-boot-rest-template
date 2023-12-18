@@ -7,7 +7,7 @@
 	<parent>
         <groupId>sprest</groupId>
         <artifactId>spring-boot-rest-backend-template-parent</artifactId>
-        <version>0.9.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
 	</parent>
 
 	<properties/>
@@ -16,14 +16,14 @@
         <dependency>
             <groupId>sprest</groupId>
             <artifactId>sprest-template-base</artifactId>
-            <version>0.9.0-SNAPSHOT</version>
+            <version>1.0.0-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>sprest</groupId>
             <artifactId>sprest-template-base</artifactId>
-            <version>0.9.0-SNAPSHOT</version>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
