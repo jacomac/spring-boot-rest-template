@@ -1,10 +1,8 @@
 package sprest.shopping.store;
 
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-
-import jakarta.persistence.*;
-import sprest.user.AppUser;
 
 @Data
 @Entity
@@ -17,5 +15,9 @@ public class Store {
     @NotNull
     @Column
     private String name;
+
+    public void copyDto(StoreDto dto) {
+        setName(dto.getName());
+    }
 
 }
