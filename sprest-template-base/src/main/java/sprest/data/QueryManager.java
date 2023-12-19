@@ -71,13 +71,7 @@ public class QueryManager<T> {
 				String value = (String) f.get(filter);
 				if (StringUtils.isNotEmpty(value)) {
                     String prop = f.getName();
-                    if (prop.startsWith("tenant")) {
-                        prop = prop.replaceAll("tenant", "");
-                        predicates.add(cb.like(cb.lower(iRoot.<String>get("client").get(prop.toLowerCase())), "%" + value.toLowerCase() + "%"));
-                    } else {
-                        predicates.add(cb.like(cb.lower(iRoot.get(f.getName())),
-                                "%" + value.toLowerCase() + "%"));
-                    }
+                    predicates.add(cb.like(cb.lower(iRoot.get(f.getName())), "%" + value.toLowerCase() + "%"));
                 }
 			} else if (Boolean.class.equals(f.getType())) {
 				Boolean value = (Boolean) f.get(filter);
@@ -97,8 +91,6 @@ public class QueryManager<T> {
 				Integer value = (Integer) f.get(filter);
 				if (value != null && value > 0) {
 					String prop = f.getName();
-					if ("clientId".equals(prop)) // TODO ugly - find a better solution!
-						prop = "client";
 			    	predicates.add(cb.equal(iRoot.<Integer>get(prop), value));
                 }
 			}

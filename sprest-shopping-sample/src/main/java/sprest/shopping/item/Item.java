@@ -1,10 +1,11 @@
 package sprest.shopping.item;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import sprest.shopping.store.Store;
 
-import jakarta.persistence.*;
 import java.util.Date;
 
 @Data
@@ -15,6 +16,7 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @NotNull
     @Column
     private String name;
 
@@ -24,6 +26,9 @@ public class Item {
     private Date creationDate;
 
     @ManyToOne
-    @JoinColumn(name = "store_id")
     private Store store;
+
+    public void copyDto(ItemDto dto) {
+        setName(dto.getName());
+    }
 }

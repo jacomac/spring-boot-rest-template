@@ -111,69 +111,13 @@ public class ShoppingListControllerTest extends ShoppingSampleTestBase {
     }
 
     @Test
-    public void testGetItemsByName() throws Exception {
-        var user = getMockUser(ACCESS_SHOPPING);
-        mockMoreItems();
-        mockMoreStores();
-
-        mockMvc
-                .perform(get("/items")
-                    .param("name", "Jacket")
-                    .param("page", "0")
-                    .param("size", "10")
-                    .with(user(new UserPrincipal(user)))
-                )
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.number", is(0)))
-                .andExpect(jsonPath("$.size", is(10)))
-                .andExpect(jsonPath("$.numberOfElements", is(0)))
-                .andExpect(jsonPath("$.totalElements", is(0)))
-                .andExpect(jsonPath("$.totalPages", is(0)))
-                .andExpect(jsonPath("$.content.length()", is(0)));
-
-        mockMvc
-                .perform(get("/items")
-                        .param("name", "T-shirt")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.number", is(0)))
-                .andExpect(jsonPath("$.size", is(10)))
-                .andExpect(jsonPath("$.numberOfElements", is(2)))
-                .andExpect(jsonPath("$.totalElements", is(2)))
-                .andExpect(jsonPath("$.totalPages", is(1)))
-                .andExpect(jsonPath("$.content.length()", is(2)))
-                .andExpect(jsonPath("$.content[*].name", contains(
-                        "Spring Store T-shirt", "Summer Store T-shirt")));
-
-        mockMvc
-                .perform(get("/items")
-                        .param("name", "s")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.number", is(0)))
-                .andExpect(jsonPath("$.size", is(10)))
-                .andExpect(jsonPath("$.numberOfElements", is(5)))
-                .andExpect(jsonPath("$.totalElements", is(5)))
-                .andExpect(jsonPath("$.totalPages", is(1)))
-                .andExpect(jsonPath("$.content.length()", is(5)))
-                .andExpect(jsonPath("$.content[*].name", contains(
-                        "Boots", "Jeans", "Gloves", "Spring Store T-shirt", "Summer Store T-shirt")));
-    }
-
-    @Test
     public void testGetItemsByStoreId() throws Exception {
         var user = getMockUser(ACCESS_SHOPPING);
         mockMoreItems();
         mockMoreStores();
 
         mockMvc
-                .perform(get("/items")
-                    .param("storeId", "999")
+                .perform(get("/items/store/999")
                     .param("page", "0")
                     .param("size", "10")
                     .with(user(new UserPrincipal(user))))
@@ -187,8 +131,7 @@ public class ShoppingListControllerTest extends ShoppingSampleTestBase {
                 .andExpect(jsonPath("$.content.length()", is(0)));
 
         mockMvc
-                .perform(get("/items")
-                    .param("storeId", String.valueOf(store.getId()))
+                .perform(get("/items/store/" + store.getId())
                     .param("page", "0")
                     .param("size", "10")
                     .with(user(new UserPrincipal(user))))
@@ -204,8 +147,7 @@ public class ShoppingListControllerTest extends ShoppingSampleTestBase {
                         "Coat", "Boots", "Jeans", "Hat", "Gloves")));
 
         mockMvc
-                .perform(get("/items")
-                    .param("storeId", "2")
+                .perform(get("/items/store/2")
                     .param("page", "0")
                     .param("size", "10")
                     .with(user(new UserPrincipal(user))))
@@ -220,59 +162,4 @@ public class ShoppingListControllerTest extends ShoppingSampleTestBase {
                 .andExpect(jsonPath("$.content[0].name", containsString("T-shirt")));
     }
 
-    @Test
-    public void testGetItemsByNameAndStoreId() throws Exception {
-        var user = getMockUser(ACCESS_SHOPPING);
-        mockMoreItems();
-        mockMoreStores();
-
-        mockMvc
-                .perform(get("/items")
-                    .param("name", "Jacket")
-                    .param("storeId", String.valueOf(store.getId()))
-                    .param("page", "0")
-                    .param("size", "10")
-                    .with(user(new UserPrincipal(user)))
-                )
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.number", is(0)))
-                .andExpect(jsonPath("$.size", is(10)))
-                .andExpect(jsonPath("$.numberOfElements", is(0)))
-                .andExpect(jsonPath("$.totalElements", is(0)))
-                .andExpect(jsonPath("$.totalPages", is(0)))
-                .andExpect(jsonPath("$.content.length()", is(0)));
-
-        mockMvc
-                .perform(get("/items")
-                        .param("name", "Coat")
-                        .param("storeId", "999")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.number", is(0)))
-                .andExpect(jsonPath("$.size", is(10)))
-                .andExpect(jsonPath("$.numberOfElements", is(0)))
-                .andExpect(jsonPath("$.totalElements", is(0)))
-                .andExpect(jsonPath("$.totalPages", is(0)))
-                .andExpect(jsonPath("$.content.length()", is(0)));
-
-        mockMvc
-                .perform(get("/items")
-                        .param("name", "T-shirt")
-                        .param("storeId", String.valueOf(store.getId() + 1))
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.number", is(0)))
-                .andExpect(jsonPath("$.size", is(10)))
-                .andExpect(jsonPath("$.numberOfElements", is(1)))
-                .andExpect(jsonPath("$.totalElements", is(1)))
-                .andExpect(jsonPath("$.totalPages", is(1)))
-                .andExpect(jsonPath("$.content.length()", is(1)))
-                .andExpect(jsonPath("$.content[0].name", containsString("T-shirt")))
-                .andExpect(jsonPath("$.content[0].store.id", is(store.getId() + 1)));
-    }
 }

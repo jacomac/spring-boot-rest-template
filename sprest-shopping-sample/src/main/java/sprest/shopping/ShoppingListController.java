@@ -1,6 +1,10 @@
 package sprest.shopping;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.converters.models.PageableAsQueryParam;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -12,8 +16,11 @@ import sprest.shopping.store.StoreRepository;
 
 import jakarta.validation.Valid;
 
+import java.util.NoSuchElementException;
+
 import static sprest.user.ShoppingRight.values.ACCESS_SHOPPING;
 
+// methods ordered according to CRUD
 @Tag(name = "Shopping List Controller", description = "API to maintain a personal shopping list")
 @RestController
 @RequiredAccessRight(ACCESS_SHOPPING)
@@ -21,22 +28,12 @@ import static sprest.user.ShoppingRight.values.ACCESS_SHOPPING;
 public class ShoppingListController {
     private ItemRepository itemRepository;
     private StoreRepository storeRepository;
+    private static String MSG_ITEM_NOT_FOUND = "Item not found";
 
     public ShoppingListController(ItemRepository itemRepository,
                                   StoreRepository storeRepository) {
         this.itemRepository = itemRepository;
         this.storeRepository = storeRepository;
-    }
-
-    @GetMapping("/{id}")
-    public Item getItem(@PathVariable("id") int id) {
-        var item = itemRepository.findById(id);
-        if (item.isPresent()) {
-            return item.get();
-        } else {
-            var msg = String.format("item %s could not be found", id);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, msg);
-        }
     }
 
     @PostMapping
@@ -52,4 +49,51 @@ public class ShoppingListController {
             return itemRepository.save(item);
         }
     }
+
+    @GetMapping("/{id}")
+    public Item getItem(@PathVariable("id") int id) {
+        var item = itemRepository.findById(id);
+        if (item.isPresent()) {
+            return item.get();
+        } else {
+            var msg = String.format("item %s could not be found", id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, msg);
+        }
+    }
+
+    @Operation(summary = "Get a list of items to be bought",
+        description = "Get a list of items to be bought chunked into pages")
+    @PageableAsQueryParam
+    @GetMapping
+    public Page<Item> getItems(Pageable page) {
+        return itemRepository.findAll(page);
+    }
+
+    @Operation(summary = "Get a list of items to be bought",
+        description = "Get a list of items to be bought chunked into pages")
+    @PageableAsQueryParam
+    @GetMapping("/store/{storeId}")
+    public Page<Item> getItemsOfStore(@PathVariable("storeId") int storeId, Pageable page) {
+        return itemRepository.findByStore_Id(page, storeId);
+    }
+
+    @PutMapping("/{id}")
+    public Item updateItem (@PathVariable("id") int id, @Valid @RequestBody ItemDto dto) {
+        try {
+            var item = itemRepository.findById(id).orElseThrow();
+            item.copyDto(dto);
+            return itemRepository.save(item);
+        } catch (NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, MSG_ITEM_NOT_FOUND, e);
+        }
+    }
+
+    public void deleteItem(@PathVariable("id") int id) {
+        try {
+            itemRepository.deleteById(id);
+        } catch (NoSuchElementException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, MSG_ITEM_NOT_FOUND, e);
+        }
+    }
+
 }

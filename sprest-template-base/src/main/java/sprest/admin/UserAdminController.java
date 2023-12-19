@@ -39,7 +39,6 @@ public class UserAdminController {
 
 	// read single
 	@GetMapping("/{id}")
-	@RequiredAccessRight(MANAGE_USERS)
 	public UserDtoWithId getUser(@PathVariable("id") int id) {
 		var user = userService.getById(id);
         user.setPassword(null);
@@ -53,7 +52,6 @@ public class UserAdminController {
 					+ " To apply the specified filter, you need to set 'useFilter' to true")
 	@PageableAsQueryParam
 	@GetMapping
-	@RequiredAccessRight({MANAGE_USERS})
     public Page<UserAdminDto> getUsersInPages(Principal auth, Optional<UserSearchFilter> filter, Pageable pageable) {
         if (auth == null)
             return null;
